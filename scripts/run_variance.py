@@ -1,20 +1,26 @@
 #!/usr/bin/env python3
-"""Measure run-to-run variance: how much of a score is signal?
+"""Measure how much of a score survives changes that should not matter.
 
-Repeats the identical evaluation N times with code, prompts and conditions
-held fixed and caching disabled, then reports the spread. This has to be
-answered before any consolidation verdict is trusted, because keep/drop
-decisions rest on between-model differences and those are only meaningful if
-they exceed the noise a single model produces against itself.
+The first version of this repeated an identical evaluation and found a noise
+floor of exactly zero -- which measured nothing. At temperature 0 with identical
+prompts issued in identical order, greedy decoding is deterministic, so the
+repeats could only ever agree. Resampling is not the source of instability here.
 
-The specific worry: scores here are driven by a handful of findings, and one
-major finding moves an aspect 10.00 -> 6.50. If which findings surface varies
-run to run, apparent model differences may be nothing but resampling.
+The real noise floor is **sensitivity to incidental choices**, and it is large.
+Moving the confidence instruction from the middle of a rule block to just above
+the output skeleton -- a pure formatting change, same rules, same model -- moved
+one model's overall score by 1.7 points. That kind of noise does not average out
+with more samples, so it matters more than sampling variance ever would.
 
-Reports, per aspect: within-model spread (the noise floor), between-model
-spread (the signal), their ratio, and whether the model ranking is stable
-across repeats. An aspect whose ranking flips between repeats cannot support a
-leaderboard column however clean its numbers look in one run.
+So the repeats perturb things that carry no information about video quality:
+
+    frame_phase   shift which frames uniform sampling lands on
+    locus_order   reorder equally-suspicious loci
+    skill_order   run the skills in a different order
+
+A score that moves under these is not measuring the video. Reports, per aspect:
+spread under perturbation (the noise floor), between-model spread (the signal),
+their ratio, and whether the model ranking survives.
 """
 from __future__ import annotations
 
@@ -46,6 +52,10 @@ def main() -> int:
     ap.add_argument("--condition-id", default="c0")
     ap.add_argument("--out", required=True)
     ap.add_argument("--repeats", type=int, default=3)
+    ap.add_argument("--perturb", default="frame_phase",
+                    choices=["none", "frame_phase", "locus_order", "skill_order"],
+                    help="what to vary between repeats; 'none' only re-verifies "
+                         "that greedy decoding is deterministic")
     ap.add_argument("--extra", nargs="*", default=[])
     args = ap.parse_args()
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
@@ -56,8 +66,12 @@ def main() -> int:
         # actually calls the model. Sharing one would make repeats 2..N free
         # and identical, measuring nothing.
         d = out / f"rep{i}"
-        print(f"=== repeat {i+1}/{args.repeats} -> {d}", flush=True)
-        p = run_once(args.videos, args.condition, args.condition_id, d, args.extra)
+        print(f"=== repeat {i+1}/{args.repeats} (perturb={args.perturb}, seed={i}) "
+              f"-> {d}", flush=True)
+        extra = list(args.extra)
+        if args.perturb != "none":
+            extra += ["--perturb", args.perturb, "--perturb-seed", str(i)]
+        p = run_once(args.videos, args.condition, args.condition_id, d, extra)
         if p.exists():
             runs.append(json.loads(p.read_text()))
         else:
@@ -73,7 +87,8 @@ def main() -> int:
         x = run[m]["score"]["aspects"].get(a) or {}
         return x.get("score") if x.get("judgeable") else None
 
-    print(f"\n{'aspect':16s} {'组内噪声':>9s} {'组间信号':>9s} {'信噪比':>7s} "
+    print(f"\n扰动方式: {args.perturb}\n")
+    print(f"{'aspect':16s} {'扰动噪声':>9s} {'组间信号':>9s} {'信噪比':>7s} "
           f"{'排序稳定':>9s}   每次运行的各模型分数")
     print("-" * 104)
     rows = []

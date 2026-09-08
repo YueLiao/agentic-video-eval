@@ -70,9 +70,33 @@ def main() -> int:
     ap.add_argument("--no-falsify", action="store_true")
     ap.add_argument("--no-compile", action="store_true",
                     help="skip LLM condition compilation (use the thin fallback)")
+    ap.add_argument("--perturb", default=None,
+                    choices=["frame_phase", "locus_order", "skill_order"])
+    ap.add_argument("--perturb-seed", type=int, default=0)
     args = ap.parse_args()
 
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
+
+    # Perturbations vary choices that carry no information about the video, so a
+    # score that moves under them was never measuring the video.
+    if args.perturb == "frame_phase":
+        from agenteval.media.clip import set_sample_phase
+        set_sample_phase((args.perturb_seed * 0.37) % 1.0)
+    elif args.perturb == "locus_order":
+        import agenteval.signals.suspicion as _sus
+        _orig = _sus.extract_loci
+        import random as _r
+        def _shuffled(*a, **k):
+            loci = _orig(*a, **k)
+            rng = _r.Random(args.perturb_seed)
+            # reorder loci whose scores are close: their ranking is arbitrary
+            rng.shuffle(loci)
+            loci.sort(key=lambda l: -round(l.score, 1))
+            for n, l in enumerate(loci):
+                l.locus_id = f"L{n:02d}"
+            return loci
+        _sus.extract_loci = _shuffled
+
     vlm = build_client(out / "cache", out / "vlm_calls.jsonl")
     print(f"model={vlm.model} endpoint={vlm.base_url}")
 
@@ -86,6 +110,9 @@ def main() -> int:
     graph.save(out / "graph.json")
 
     results = []
+    if args.perturb == "skill_order":
+        import random as _r
+        _r.Random(args.perturb_seed)  # order applied per-video below
     for path in args.videos:
         name = Path(path).parent.name + "__" + Path(path).stem
         vdir = out / name

@@ -32,11 +32,20 @@ from agenteval.skills.base import Finding, SkillVerdict
 
 SEVERITY_WEIGHT: dict[str, float] = {"minor": 0.10, "major": 0.35, "critical": 0.85}
 
-#: A finding this bad caps its dimension however clean everything else is. A
-#: video with a critical structural failure is not a good video that happens to
-#: have one problem, and a plain weighted mean would let volume of good outweigh
-#: it.
-SEVERITY_CAP: dict[str, float] = {"critical": 3.0, "major": 6.5}
+#: The ceiling a finding of this grade imposes: however clean everything else
+#: is, one critical structural failure means the aspect is not above 3.0.
+#:
+#: It is a **ceiling, not a clamp**. Applying it as `min(score, cap)` was a bug
+#: that collapsed the entire scale: across 420 scored aspects only three values
+#: ever appeared -- 10.00, 6.50, 3.00 -- because one major finding pinned the
+#: result to exactly 6.5 and further findings changed nothing. All the work in
+#: the penalty term (severity x coverage x confidence, accumulating over
+#: findings) was discarded at the last step, so a video with one small
+#: blemish and one with six large ones scored identically.
+#:
+#: Now the ceiling sets where the aspect *starts* once that grade is present,
+#: and the accumulated penalty continues to push it down from there.
+SEVERITY_CEILING: dict[str, float] = {"critical": 3.0, "major": 6.5, "minor": 9.0}
 
 #: Integrity dimensions start clean and lose points; conformance dimensions are
 #: satisfaction ratios and start empty. They must not be aggregated the same way.
@@ -156,22 +165,54 @@ def coverage(f: Finding, total_frames: int) -> float:
     return max(0.05, min(1.0, (0.5 + 0.5 * t) * (0.4 + 0.6 * a)))
 
 
+def _score_from_findings(live: Sequence[Finding],
+                         total_frames: int) -> tuple[float, str | None]:
+    """Accumulated penalty, then lowered to the worst grade's ceiling.
+
+    Both terms matter and each fixes the other's failure. The penalty alone
+    lets many small findings out-weigh one disqualifying failure; the ceiling
+    alone throws away every distinction between one problem and six. So the
+    ceiling establishes the starting point for that grade and the remaining
+    findings keep pushing down from it -- which is what gives the scale values
+    other than the three it had.
+    """
+    if not live:
+        return 10.0, None
+    order = {"critical": 0, "major": 1, "minor": 2}
+    # Index rather than the object: identity comparison would skip every finding
+    # that happens to be the same object, and more importantly it makes the
+    # "exclude the leading finding" rule depend on object identity rather than
+    # on position, which is not a property real data guarantees.
+    lead_i = min(range(len(live)), key=lambda i: order.get(live[i].severity, 3))
+    worst = live[lead_i]
+    ceiling = SEVERITY_CEILING.get(worst.severity, 10.0)
+
+    # How far the leading finding actually pulls the score down to its ceiling.
+    # Confidence and extent belong here rather than only in the residual: a
+    # marginal, briefly-visible major is not the same event as one that persists
+    # across the clip, and collapsing both onto the ceiling was what left the
+    # scale with three distinct values.
+    lead_strength = (max(0.3, min(1.0, worst.confidence))
+                     * (0.6 + 0.4 * coverage(worst, total_frames)))
+    score = 10.0 - (10.0 - ceiling) * lead_strength
+
+    # Everything after the leading finding accumulates from there, so quantity
+    # still separates one blemish from six.
+    residual = 0.0
+    for i, f in enumerate(live):
+        if i == lead_i:
+            continue
+        residual += (SEVERITY_WEIGHT.get(f.severity, 0.10)
+                     * coverage(f, total_frames) * max(0.3, f.confidence))
+    score *= max(0.0, 1.0 - min(1.0, residual))
+    cap_by = worst.kind if ceiling < 10.0 else None
+    return round(score, 3), cap_by
+
+
 def score_integrity(dimension: str, findings: Sequence[Finding],
                     total_frames: int) -> DimensionScore:
     live = [f for f in findings if f.counts]
-    penalty = 0.0
-    worst_cap, cap_by = None, None
-    for f in live:
-        w = SEVERITY_WEIGHT.get(f.severity, 0.10)
-        penalty += w * coverage(f, total_frames) * max(0.3, f.confidence)
-        cap = SEVERITY_CAP.get(f.severity)
-        if cap is not None and (worst_cap is None or cap < worst_cap):
-            worst_cap, cap_by = cap, f.kind
-    score = 10.0 * max(0.0, 1.0 - min(1.0, penalty))
-    if worst_cap is not None and score > worst_cap:
-        score = worst_cap
-    else:
-        cap_by = None
+    score, cap_by = _score_from_findings(live, total_frames)
     return DimensionScore(
         dimension=dimension, score=score, n_findings=len(live),
         n_retracted=len(findings) - len(live), capped_by=cap_by,
@@ -376,18 +417,10 @@ def score_aspects(verdicts: Sequence[SkillVerdict], *, total_frames: int,
                 judgeability=a.judgeability, actionable=a.actionable,
                 n_retracted=len(fs) - len(live))
             continue
-        penalty = 0.0
-        worst = None
         order = {"critical": 0, "major": 1, "minor": 2}
-        for f in live:
-            penalty += (SEVERITY_WEIGHT.get(f.severity, 0.1)
-                        * coverage(f, total_frames) * max(0.3, f.confidence))
-            if worst is None or order.get(f.severity, 3) < order.get(worst, 3):
-                worst = f.severity
-        score = 10.0 * max(0.0, 1.0 - min(1.0, penalty))
-        cap = SEVERITY_CAP.get(worst) if worst else None
-        if cap is not None:
-            score = min(score, cap)
+        worst = (min(live, key=lambda f: order.get(f.severity, 3)).severity
+                 if live else None)
+        score, _ = _score_from_findings(live, total_frames)
         out[a.key] = AspectScore(
             a.key, a.label_zh, a.group, score, judgeability=a.judgeability,
             n_findings=len(live), n_retracted=len(fs) - len(live),

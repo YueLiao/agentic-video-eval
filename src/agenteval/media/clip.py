@@ -21,13 +21,30 @@ from typing import Sequence
 import numpy as np
 
 
+#: Global phase offset for uniform sampling, in [0,1). Zero in normal use.
+#: Set by the perturbation harness to shift which frames get sampled -- an
+#: arbitrary choice that should not change a verdict, and therefore a way to
+#: measure how much of a score is real.
+SAMPLE_PHASE = 0.0
+
+
+def set_sample_phase(phase: float) -> None:
+    global SAMPLE_PHASE
+    SAMPLE_PHASE = float(phase) % 1.0
+
+
 def uniform_indices(total: int, n: int) -> list[int]:
     """Uniform sampling spanning the full range, first and last frame included."""
     if total <= 0 or n <= 0:
         return []
     if n == 1:
         return [0]
-    return [int(round(i * (total - 1) / (n - 1))) for i in range(n)]
+    idx = [int(round(i * (total - 1) / (n - 1))) for i in range(n)]
+    if SAMPLE_PHASE:
+        step = (total - 1) / (n - 1)
+        off = int(round(SAMPLE_PHASE * step))
+        idx = [max(0, min(total - 1, i + off)) for i in idx]
+    return idx
 
 
 def strided_indices(total: int, n: int) -> list[int]:
