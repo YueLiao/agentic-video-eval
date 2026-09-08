@@ -63,24 +63,48 @@ FALSIFY_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": ["verdict", "reason"],
     "properties": {
-        "verdict": {"enum": ["uphold", "retract"]},
+        "verdict": {"enum": ["uphold", "retract", "insufficient"]},
+        "alternative": {"type": "string"},
+        "evidence_for_alternative": {"type": "string"},
         "reason": {"type": "string"},
         "severity": {"enum": ["minor", "major", "critical"]},
     },
 }
 
 FALSIFY_SYSTEM = """\
-你在做**反证审查**。下面有一条别人提出的缺陷指控,以及相关证据——
-包括可疑区域本身、它在相邻时刻的样子、以及一块作为对照的正常区域。
+你在做**反证审查**:判断一条缺陷指控是否站得住。
 
-你的任务不是复核这条指控对不对,而是**尽力反驳它**:
-- 这个现象能否由正常的运动模糊、正常的遮挡、正常的光照变化解释?
-- 对照区域是否也有同样的现象?若有,那这就是这段视频的正常表现,不是缺陷。
-- 相邻时刻是否也这样?若是,那它不是一个"事件"。
-- 证据是否根本不足以看清?看不清就是看不清,不能算缺陷成立。
+## 你的任务不是"能不能想出别的解释"
 
-只有当你**反驳不掉**时才 uphold。存疑一律 retract。
-只输出 JSON: {"verdict": "uphold"|"retract", "reason": "...", "severity": "minor"|"major"|"critical"}
+对任何视觉现象,总能构造出一个听起来合理的无罪解释——运动模糊、遮挡、材质、光照。
+**仅仅提出一个替代解释不构成撤回理由。**
+你必须进一步**验证这个替代解释是否与证据一致**:
+
+- 说是**运动模糊**导致的?那么在运动慢的帧、或运动停止后的帧上,该部位应当是清晰、
+  结构正确的。**去证据里找那样的帧。找不到,或那些帧上问题依然存在,则解释不成立。**
+- 说是**遮挡/材质覆盖**(泥浆、水、衣物)导致的?那么被覆盖的轮廓应当仍然连贯,
+  且覆盖物本身应当有一致的外观。**如果结构在覆盖下仍然违反解剖(手指数量变了、
+  出现违反关节的突起),覆盖解释不成立。**
+- 说是**正常物理现象**?那么它应当在时间上连续且符合该材料的行为。
+  凭空出现或消失、或形态突变,物理解释不成立。
+- 说是**透视/角度**造成的?那么变化应当随视角平滑变化,不应在相邻帧间跳变。
+
+## 判定
+
+- **uphold**:指控描述的现象确实存在,且你**验证过的**替代解释都与证据矛盾。
+- **retract**:你提出了替代解释,**并且在证据中找到了支持它的具体依据**
+  (指出是哪一帧、哪个区域)。
+- **insufficient**:证据不足以判断——画面看不清、缺少必要的对照帧。
+  这**不等于** retract:它意味着这条指控既没被证实也没被推翻。
+
+严重度可以下调而不必整条撤回:如果现象存在但比指控说的轻微,用 uphold + 更低的 severity。
+
+只输出 JSON:
+{"verdict":"uphold"|"retract"|"insufficient",
+ "alternative":"<你考虑的替代解释,没有则空>",
+ "evidence_for_alternative":"<支持该替代解释的具体证据:哪一帧、哪个区域。没有则空>",
+ "reason":"...",
+ "severity":"minor"|"major"|"critical"}
 """
 
 
@@ -246,9 +270,26 @@ def falsify(verdict: SkillVerdict, ctx: SkillContext, vlm: VLMClient,
         if not r.ok:
             continue
         p = r.parsed or {}
-        if str(p.get("verdict")) == "retract":
-            f.retracted = True
-            f.retraction_reason = str(p.get("reason", ""))[:400]
+        v = str(p.get("verdict", ""))
+        alt = str(p.get("alternative", "")).strip()
+        ev = str(p.get("evidence_for_alternative", "")).strip()
+        if v == "retract":
+            # A retraction has to name evidence for its alternative. Without
+            # that requirement the pass degenerates into explaining everything
+            # away, since a plausible-sounding alternative always exists.
+            if alt and not ev:
+                f.retraction_reason = ("反证提出了替代解释但未给出支持它的证据,"
+                                       f"不予撤回:{alt[:160]}")
+            else:
+                f.retracted = True
+                f.retraction_reason = (str(p.get("reason", ""))[:300]
+                                       + (f"  [依据:{ev[:120]}]" if ev else ""))
+        elif v == "insufficient":
+            # Neither confirmed nor overturned: keep it, but weakened, so it
+            # cannot dominate a score on evidence nobody could read.
+            f.confidence = min(f.confidence, 0.3)
+            f.severity = "minor" if f.severity == "critical" else f.severity
+            f.retraction_reason = f"证据不足,降权保留:{str(p.get('reason',''))[:200]}"
         elif p.get("severity"):
             f.severity = str(p["severity"])
     return verdict

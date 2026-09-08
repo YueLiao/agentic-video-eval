@@ -72,6 +72,14 @@ class DimensionScore:
                 "reason": self.reason, "findings": self.findings}
 
 
+#: Retraction rates outside this band mean the falsification pass is not
+#: filtering. At the top, every accusation is being explained away and the
+#: report is a silent pass; at the bottom, nothing is being challenged and the
+#: pass is decorative. Either way the scores are not trustworthy, and a run that
+#: looks clean is more dangerous than one that crashes.
+RETRACTION_OK = (0.05, 0.75)
+
+
 @dataclass
 class VideoScore:
     overall: float
@@ -83,6 +91,11 @@ class VideoScore:
     n_retracted: int = 0
     retraction_rate: float = 0.0
     caps_fired: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+
+    @property
+    def trustworthy(self) -> bool:
+        return not self.warnings
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -95,6 +108,8 @@ class VideoScore:
             "n_findings": self.n_findings, "n_retracted": self.n_retracted,
             "retraction_rate": round(self.retraction_rate, 3),
             "caps_fired": self.caps_fired,
+            "warnings": self.warnings,
+            "trustworthy": self.trustworthy,
         }
 
     def table(self) -> str:
@@ -119,6 +134,8 @@ class VideoScore:
                     rows.append(f"    {a.label:10s} {a.score:6.2f}   {note}")
         rows.append(f"\n  {'总分':10s} {self.overall:6.2f}"
                     f"   (仅计入可判项)")
+        for w in self.warnings:
+            rows.append(f"\n  ⚠ 本次结果不可信: {w}")
         return "\n".join(rows)
 
 
@@ -227,6 +244,7 @@ def synthesize(verdicts: Iterable[SkillVerdict], *, total_frames: int,
     rate = total_r / max(1, total_f + total_r)
     caps = [f"{d.dimension}:{d.capped_by}" for d, _ in scored if d.capped_by]
 
+
     examined: set[str] = set()
     for v in verdicts_list:
         if v.error is None:
@@ -242,8 +260,23 @@ def synthesize(verdicts: Iterable[SkillVerdict], *, total_frames: int,
         mean_a = sum(a.score * w for a, w in zip(judged, ws)) / sum(ws)
         worst_a = min(a.score for a in judged)
         overall = (1 - alpha) * mean_a + alpha * min(mean_a, worst_a)
+    # A clean-looking report from a broken pipeline is the worst output this
+    # system can produce, so the conditions that make one are stated loudly.
+    warnings: list[str] = []
+    raised = total_f + total_r
+    if raised >= 4 and rate > RETRACTION_OK[1]:
+        warnings.append(
+            f"撤回率 {rate:.0%}({total_r}/{raised}):反证环节在否定一切而非筛选,"
+            "满分很可能是静默失败而不是真的没问题")
+    elif raised >= 4 and rate < RETRACTION_OK[0]:
+        warnings.append(
+            f"撤回率 {rate:.0%}:几乎没有指控被挑战,反证环节形同虚设")
+    n_judgeable = sum(1 for a in asp.values() if a.judgeable)
+    if n_judgeable and total_f == 0 and raised == 0:
+        warnings.append("没有任何 skill 提出过 finding:请确认判官确实在检查,"
+                        "而不是每轮都直接 conclude")
     return VideoScore(overall, dims, asp, group_rollup(asp), dict(NOT_SCORED),
-                      total_f, total_r, rate, caps)
+                      total_f, total_r, rate, caps, warnings)
 
 
 @dataclass
