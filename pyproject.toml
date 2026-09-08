@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agenteval"
+version = "0.1.0"
+description = "Agentic multi-dimensional evaluation for generated short videos (5-15s)"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "requests",
+    "opencv-python-headless",
+    "pillow",
+]
+
+[project.optional-dependencies]
+tools = ["mediapipe", "ultralytics", "pyiqa", "timm", "open_clip_torch", "scipy"]
+meta = ["scipy", "krippendorff"]
+
+[project.scripts]
+agenteval = "agenteval.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+agenteval = ["config/profiles/*.yaml", "skills/prompts/*.md"]
