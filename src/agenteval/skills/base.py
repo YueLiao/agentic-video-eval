@@ -153,6 +153,14 @@ class Skill(ABC):
     presentation: Presentation = Presentation.COMPOSITE
     max_images: int = 12
 
+    #: Set by the orchestrator to the per-clip assembled prompt. When present it
+    #: replaces the static one, so a skill never has to know it is being routed.
+    _dynamic_prompt: str | None = None
+
+    @property
+    def prompt(self) -> str:
+        return self._dynamic_prompt or self.system_prompt
+
     @property
     @abstractmethod
     def system_prompt(self) -> str: ...

@@ -62,21 +62,37 @@ See [DESIGN.md](DESIGN.md) for the full design.
 
 ## Status
 
-Early. Milestone 1 (suspicion mapping + defect injection + measurement harness) is
-under construction; nothing here is validated yet.
+The harness runs end to end against a scripted judge: route -> skills -> falsify ->
+score. Four integrity skills are implemented (temporal, motion, human, physical);
+the conformance skills and the offline condition compiler are designed but not
+built. **Nothing has been run against a live VLM yet**, so no quality claim here
+is validated -- what is validated is the control flow, the tools, and the
+suspicion map's behaviour on injected defects (see `notes/M1-findings.md`).
 
 ## Layout
 
 ```
 src/agenteval/
   media/       clip decoding, frame access, sampling
-  tools/       tool contract and registry
-  signals/     VLM-free suspicion mapping
-  synth/       synthetic defect injection (ground truth for free)
-  planning/    offline condition -> requirement graph compilation
-  engine/      evidence bus, budgets, agent loops
-  scoring/     defect inventory -> dimension scores
-  interop/     optional, one-way adapters to an existing toolchain
+  llm/         provider-agnostic VLM client; scripted client for offline tests
+  signals/     VLM-free suspicion mapping (the search index)
+  tools/       detectors, physics invariants, view synthesis, weight registry
+  synth/       synthetic defect injection + measurement harness
+  prompting/   dynamic system-prompt assembly from typed slots
+  router/      condition + cheap probes -> skills, budgets, prompt fragments
+  skills/      one per dimension: prompt, action menu, presentation policy
+  engine/      evidence bus, bounded loop, falsification, orchestrator
+  scoring/     findings -> dimension scores -> overall
+  planning/    offline condition -> requirement graph (designed, not built)
+```
+
+## Try it
+
+```bash
+. env/bootstrap.sh
+python tests/test_loop.py        <video.mp4>   # loop control flow
+python tests/test_end_to_end.py  <video.mp4>   # route -> skills -> falsify -> score
+python scripts/run_injection_bench.py --sources 'DIR/*.mp4' --out bench/m1 --per-type 4
 ```
 
 ## Setup

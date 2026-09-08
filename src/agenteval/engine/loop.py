@@ -139,7 +139,7 @@ def run_skill(skill: Skill, ctx: SkillContext, vlm: VLMClient,
         t0 = time.perf_counter()
         user = (skill.render_state(ctx, evidence, history) + "\n\n"
                 + decision_instructions(menu))
-        resp = vlm.ask(system=skill.system_prompt + "\n" + JUDGE_RULES, user=user,
+        resp = vlm.ask(system=skill.prompt + "\n" + JUDGE_RULES, user=user,
                        images=_images_for(evidence, skill.max_images, skill.presentation),
                        schema=DECISION_SCHEMA,
                        tag=f"{skill.name}/decide/{rnd}")
@@ -185,7 +185,7 @@ def run_skill(skill: Skill, ctx: SkillContext, vlm: VLMClient,
               "以及尽可能精确的 t_span(帧区间)和 bbox(归一化 x,y,w,h)。\n"
               "没有问题就返回空的 findings 数组。\n"
               "只输出 JSON: {\"summary\": \"...\", \"findings\": [...]}")
-    vres = vlm.ask(system=skill.system_prompt + "\n" + JUDGE_RULES, user=user,
+    vres = vlm.ask(system=skill.prompt + "\n" + JUDGE_RULES, user=user,
                    images=_images_for(evidence, skill.max_images, skill.presentation),
                    schema=VERDICT_SCHEMA,
                    tag=f"{skill.name}/verdict")
