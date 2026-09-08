@@ -19,9 +19,28 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Sequence
 
+from enum import Enum
+
 from agenteval.engine.actions import Action
 from agenteval.engine.evidence import Evidence, EvidenceBus
 from agenteval.media.clip import VideoHandle
+
+
+class Presentation(str, Enum):
+    """How a skill wants its visual evidence encoded.
+
+    Not cosmetic. Compositing several moments into one image makes *comparative*
+    judgements easy (is this region different from that one) because the model
+    no longer has to hold a visual memory across images. It makes *rate*
+    judgements impossible, because a grid discards timing: a stutter and a slow
+    passage look identical laid out spatially. Motion, rhythm and continuity
+    therefore need the sequence kept, and physical plausibility often needs the
+    clip itself. Each skill declares what its question actually requires.
+    """
+
+    COMPOSITE = "composite"   # one labelled image; comparative judgements
+    ORDERED = "ordered"       # separate images in temporal order; rate/continuity
+    VIDEO = "video"           # native video input, where the endpoint accepts it
 
 
 @dataclass
@@ -131,6 +150,8 @@ class Skill(ABC):
     name: str
     dimension: str
     max_rounds: int = 4
+    presentation: Presentation = Presentation.COMPOSITE
+    max_images: int = 12
 
     @property
     @abstractmethod

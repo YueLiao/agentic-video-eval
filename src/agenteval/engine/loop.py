@@ -32,8 +32,9 @@ from agenteval.engine.actions import (CONCLUDE, DECISION_SCHEMA, Action,
                                       decision_instructions)
 from agenteval.engine.evidence import Evidence
 from agenteval.llm.client import ImageRef, VLMClient
-from agenteval.skills.base import (JUDGE_RULES, VERDICT_SCHEMA, Finding, Skill,
-                                   SkillContext, SkillVerdict)
+from agenteval.skills.base import (JUDGE_RULES, VERDICT_SCHEMA, Finding,
+                                   Presentation, Skill, SkillContext,
+                                   SkillVerdict)
 
 
 @dataclass
@@ -83,11 +84,28 @@ FALSIFY_SYSTEM = """\
 """
 
 
-def _images_for(evidence: Sequence[Evidence], cap: int = 12) -> list[ImageRef]:
-    out: list[ImageRef] = []
-    for e in evidence:
-        if not e.admissible:
-            continue
+def _images_for(evidence: Sequence[Evidence], cap: int = 12,
+                presentation: Presentation = Presentation.COMPOSITE) -> list[ImageRef]:
+    """Collect images under the skill's presentation policy.
+
+    Under ORDERED the newest evidence is kept and its internal frame order is
+    preserved, because for a rate judgement the recent, densely-sampled window
+    is the evidence and truncating its tail destroys exactly the interval being
+    judged. Under COMPOSITE, earlier evidence is kept first: those are the
+    single-image comparisons the skill asked for, and each is self-contained.
+    """
+    usable = [e for e in evidence if e.admissible]
+    if presentation is Presentation.ORDERED:
+        out: list[ImageRef] = []
+        for e in reversed(usable):
+            imgs = e.images()
+            if len(out) + len(imgs) > cap:
+                out = imgs[:cap - len(out)] + out if len(out) < cap else out
+                break
+            out = imgs + out
+        return out[:cap]
+    out = []
+    for e in usable:
         for im in e.images():
             out.append(im)
             if len(out) >= cap:
@@ -122,7 +140,8 @@ def run_skill(skill: Skill, ctx: SkillContext, vlm: VLMClient,
         user = (skill.render_state(ctx, evidence, history) + "\n\n"
                 + decision_instructions(menu))
         resp = vlm.ask(system=skill.system_prompt + "\n" + JUDGE_RULES, user=user,
-                       images=_images_for(evidence), schema=DECISION_SCHEMA,
+                       images=_images_for(evidence, skill.max_images, skill.presentation),
+                       schema=DECISION_SCHEMA,
                        tag=f"{skill.name}/decide/{rnd}")
         vlm_calls += 1
         if not resp.ok:
@@ -167,7 +186,8 @@ def run_skill(skill: Skill, ctx: SkillContext, vlm: VLMClient,
               "没有问题就返回空的 findings 数组。\n"
               "只输出 JSON: {\"summary\": \"...\", \"findings\": [...]}")
     vres = vlm.ask(system=skill.system_prompt + "\n" + JUDGE_RULES, user=user,
-                   images=_images_for(evidence), schema=VERDICT_SCHEMA,
+                   images=_images_for(evidence, skill.max_images, skill.presentation),
+                   schema=VERDICT_SCHEMA,
                    tag=f"{skill.name}/verdict")
     vlm_calls += 1
 

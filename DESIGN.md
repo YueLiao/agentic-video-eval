@@ -184,72 +184,176 @@ score_d       = combine(conformance_d, integrity_d)   # 见 §5
 
 ---
 
-## 4. 工具（按"它解决哪种失败"组织，不按学科）
+## 4. 工具:三种角色,一个目的
 
-工具不是越多越好，而是每个都必须对应 §2 的某个物理限制。
+**前提先说清楚:VLM 是这套系统里最强的瑕疵识别器。** 它见过的图像和它对"什么东西
+看起来不对"的先验,远超任何单个 CV 检测器。CV 层的职责**不是替它做判断**,而是
+把证据送到它能看见的地方,并告诉它该看哪里。
 
-**解决采样失败** — 给 Stage B 供料，也可被 agent 直接调用
-`motion_compensated_residual` · `flow_field(mag, div, curl)` · `tile_sharpness_vs_flow`
-`texture_crawl_energy` · `luma_histogram_jumps` · `detector_confidence_trace`
-→ 统一出口：`suspicion_map(video) -> list[SuspicionLocus]`
+绝大多数"VLM 没发现这个瑕疵"的情况,是**呈现失败**而非能力失败:
 
-**解决分辨率失败** — 把信息搬进 VLM 的输入
-`crop(bbox, t_span, upscale_to=448)` · `dense_window(t0, t1, n)` ·
-`contrast_pair(locus)`（可疑区 + 同区域正常时刻，并排）· `montage(frames, annotate_t=True)`
+1. 瑕疵所在的帧根本没被采样;
+2. 采样了,但被降采样到不可判读;
+3. 可判读了,但线索分散在多张独立图像里,模型需要跨图维持视觉记忆才能发现不一致。
 
-**解决先验失败** — 提供 VLM 没有的先验
-`face(detect | track | identity_drift)` · `pose(keypoints | confidence)` · `hands(21kpt)`
-`anatomy_invariants` → 骨长时间变异系数、左右对称性、超范围关节角、人数稳定性
-（**纯几何推导，零模型**：真人骨长恒定，生成的不是——这是最便宜且最不可伪造的信号）
-`open_vocab_detect(phrases)` · `track(box)` · `depth_order(a, b)`（穿模 = 深度序违反）
-`ocr` · `no_reference_iqa`
+所以工具按"它解决哪种呈现失败"分成三类。
 
-**通用**
-`ask(question, evidence_bundle)` — 唯一的 VLM 入口，也计预算、也进缓存
-`compute(goal, arrays)` — 沙箱化的一次性 numpy/OpenCV，用于问不出来但算得出来的东西
-（"这个轮子转了几圈""颗粒竖直速度是否递增"）
+### 4.1 注意力引导(解决"没采到")
 
-统一契约：
+产出**排序后的待查清单**,而不是固定采样方案。
+
+| 工具 | 产出 | 抓什么 |
+|---|---|---|
+| `suspicion_map` | 排序的 `SuspicionLocus(t_span, bbox, signal, score)` | 统一搜索索引,见 §3 Stage B |
+| `motion_curves` | 全局速度/加速度曲线 + 近静止帧、加速度尖峰帧 | 速率的时间结构 |
+| `face_detect` / `pose_detect` / `hands_detect` | 逐帧框与关键点,**以及置信度轨迹** | 人在哪、**以及检测器在哪一帧失效** |
+| `duplicate_frames` | 感知哈希近重复帧对 | 抽帧、卡顿、循环 |
+| `shot_boundary` | 镜头切换点 | 单镜头条件下的意外剪切 |
+| `open_vocab_detect` | 短语→框(v1 用 VLM 出框) | 主体在不在、在哪 |
+| `track_object` | 框→轨迹 | 供物理与运动分析 |
+
+**检测器失效本身就是一等信号。** 姿态模型在某帧置信度塌陷,是它在说"这看起来不像
+人体"——这正是我们要的信息,所以置信度轨迹要返回,不要在阈值处丢掉。
+
+### 4.2 视图合成(解决"看不见"与"跨图比不了")
+
+这是**最被低估的一类**,也是"拔升 VLM 判别力"的主要抓手。
+每个视图都附带说明它**夸大了什么**,因为每种视图都能凭空制造出瑕疵的假象。
+
+| 视图 | 形态 | 为什么它让 VLM 看得见 |
+|---|---|---|
+| `zoom_grid` | 单图 | 原生分辨率裁剪并放大。占画面 6% 的脸在整帧缩略图里只剩几十像素,信息是**缺失**而非被忽略 |
+| `filmstrip` | 单图 | 把时间**变成空间**。VLM 在一张图内比较远强于跨图比较,时间不一致因此变成普通的空间推理 |
+| `ab_contrast` | 单图 | 可疑时刻与安静时刻的同一区域并排。**若 B 上也有同样现象,那是常态不是缺陷**——这是让指控可证伪的最小装置 |
+| `residual_heatmap` | 单图 | 直接展示"运动解释不掉的变化"。让模型**看见**残差,而不是读一个残差数值 |
+| `highfreq_amplify` | 单图 | 高频放大。过度平滑的塑料皮肤、棋盘振铃、规则重复纹理,原图里低于感知阈,放大后可读 |
+| `skeleton_overlay` | 单图 | 把检测结果画在画面上,让模型**核查检测器**而不是信任它。骨长统计异常时,叠加图立刻能区分"肢体真的在变形"和"关键点落错了" |
+| `ordered_frames` | **多图有序** | 保留时序。运动的证据就是序列本身 |
+| `motion_trail` | 单图 | 多时刻叠加成轨迹形状:均匀=平滑,断档=瞬移,堆叠=停滞 |
+| `motion_curves` / `trajectory_plot` | 单图 | 把**速率**画出来。速率在任何帧的排布里都是不可见的:卡顿和慢镜头在空间上长得一样 |
+
+**单图合成 vs 多图有序不是风格问题,是问题类型决定的。**
+合成让*比较类*判断变容易(A 和 B 是否不同),却让*速率类*判断变得不可能
+(网格丢掉了时间间隔)。所以由 skill 声明它的 `Presentation`(见 §5)。
+
+### 4.3 先验补充(解决"不知道该找什么")
+
+VLM 的预训练几乎全是自然、无瑕疵视频,对生成特有的失败模式先验较弱。
+这类工具补上它缺的那部分,**但结论仍由 VLM 给出**。
+
+| 工具 | 性质 | 说明 |
+|---|---|---|
+| `anatomy_invariants` | **零模型,纯几何** | 真人骨长恒定→骨长变异系数;左右肢近似对称;关节角在人类范围内;人数不跳变。不依赖任何训练分布,因而不会随生成器换代失效。**局限:2D 投影长度会因透视缩短而变化**,所以它只说明"这根肢体值得放大看",不能单独定罪 |
+| `rigidity_check` | 零模型,纯几何 | 刚体上多点的两两距离应当保持。残差=非刚性形变。物体版的骨长不变量 |
+| `trajectory_fit` | 零模型 | 自由落体的竖直速度是直线。空中停滞=水平段,凭空上升=斜率反号 |
+| `depth_order` | 模型 | 穿模本质是两个物体的深度序违反 |
+| `identity_drift` | 模型 | 人脸/主体 embedding 的时间余弦漂移 |
+| `blink_rate` | 派生 | 真人会眨眼。整段完全不眨眼是生成人像的常见破绽 |
+| `spectral_signature` | 派生 | 径向频谱斜率异常;过度平滑与生成噪声的指纹 |
+| `temporal_self_similarity` | 派生 | 真实视频的帧间自相似结构有特征形状,生成视频异常平滑/周期 |
+| `ocr` / `iqa` / `aesthetic` | 模型 | 文字渲染、无参考画质、美学先验 |
+
+### 4.4 统一契约与"不可靠即不展示"
 
 ```python
 @dataclass
 class ToolResult:
     value: dict          # JSON 可序列化
-    images: list[Path]   # 可直接注入 VLM 消息的裁剪/叠加图
+    images: list[Path]   # 可直接注入 VLM 消息
     reliability: float   # 0..1,强制字段
     backend: str
-    hint: str            # 数值该怎么读,给判官看
+    hint: str            # 数值该怎么读,**以及它会误报什么**
 ```
 
-`reliability < 0.3` 的数值**根本不进 prompt**——展示一个不可靠的数字比不展示更糟，
-因为它会被判官当成事实锚定。
+两条硬规则:
+
+* `reliability < 0.3` 的数值**完全不进 prompt**,而不是带 caveat 展示。
+  带 caveat 也没用:prompt 里出现的数字会被当作事实锚定。
+* 每个 `hint` 必须写明该工具**会在什么情况下误报**。残差图在遮挡边界正常发亮,
+  高频放大会让任何视频都显得脏——不写清楚,这些就会变成幻觉指控的来源。
+
+### 4.5 优先把数值渲染成图像
+
+能画出来的就不要只给数字。让模型**看见**残差热力图,好过让它读 `mc_residual=3.7`;
+让它看见骨架叠加,好过让它读 `bone_length_cv=0.42`。
+这同时解决了"过度信任工具数值"的问题——模型可以用眼睛核查工具,
+而核查不了一个孤立的数字。
 
 ---
 
-## 5. 维度
+## 5. Skill:维度、动作菜单与呈现方式
 
-维度不是拍脑袋列的，是 `(Conformance | Integrity) × (语义 | 空间 | 时间 | 人)` 的交叉：
+Skill 是"一个维度"的载体,拥有四样东西,而它们**因维度而异**正是这套系统
+agentic 而非 pipeline 的原因:
 
-| 维度 | 半边 | 主要来源 |
+```
+system prompt   这个维度是什么,什么算这里的缺陷(动态构造,见 §5.2)
+action menu     这个 skill 被允许接下来看什么
+presentation    它的证据该怎么编码(单图合成 / 多图有序 / 原生视频)
+seed evidence   在问模型任何问题之前先摆好的东西
+```
+
+### 5.1 Skill 名册
+
+| Skill | 半边 | Presentation | 主要动作 | 判什么 |
+|---|---|---|---|---|
+| `temporal_integrity` ✅ | I | COMPOSITE | zoom_locus / contrast / window | 卡顿、闪烁、纹理沸腾、突现突消、身份突变 |
+| `motion_quality` ✅ | I | **ORDERED** | inspect / trail / zoom_motion | 幅度、平滑性、物理合理性、生物力学自然度 |
+| `human_integrity` | I | COMPOSITE | zoom_face / zoom_hands / skeleton / contrast | 手指、五官稳定性、骨长、关节、身份一致 |
+| `physical_integrity` | I | ORDERED | track / trajectory / depth_order / inspect | 重力、刚体形变、穿模、支撑与接触、物体恒存 |
+| `appearance_integrity` | I | COMPOSITE | zoom / highfreq / contrast | 结构崩坏、过度平滑、规则纹理、带状伪影 |
+| `semantic_conformance` | C | COMPOSITE | detect / count / zoom / ocr | 主体、属性、数量、空间关系、文字 |
+| `action_conformance` | C | **ORDERED** | inspect / trail | 动作是否发生、顺序、时序关系 |
+| `camera_conformance` | C | ORDERED | camera_traj / inspect | 运镜类型、速度、稳定性是否符合条件 |
+| `aesthetic_quality` | — | COMPOSITE | **仅成对比较** | 唯一诚实的纯主观维,只出相对排名 |
+
+✅ = 已实现。`motion_quality` 与 `temporal_integrity` 拆开是刻意的:
+一段视频可以像素完全稳定却动得毫无道理,也可以纹理沸腾但运动完全可信。
+合在一起打分会把两者都埋掉。
+
+### 5.2 动态 system prompt 构造
+
+**skill 的 prompt 不能是固定字符串。** 同一句"评估时间自洽性",在手持快速运动的
+镜头上会把运动模糊误判成缺陷,在固定机位微距镜头上又会把细微沸腾当成噪声放过。
+该告诉判官什么,取决于条件、取决于检测器实测到了什么、也取决于同时在跑哪些别的维度。
+
+所以 prompt 由带类型的**片段**按槽位组装:
+
+| 槽位 | 内容 | 来源 |
 |---|---|---|
-| `semantic_conformance` | C | entity/attribute/count/relation 节点 |
-| `action_conformance` | C | action 节点 + 时序边 |
-| `camera_conformance` | C | camera 节点（确定性轨迹估计，几乎不用 VLM） |
-| `style_conformance` | C | style 节点 |
-| `physical_integrity` | I | gravity / contact / fluid / kinematics 不变量 |
-| `human_integrity` | I | anatomy / identity / hands 不变量 |
-| `temporal_integrity` | I | 运动补偿残差、跳变、闪烁、身份漂移 |
-| `appearance_integrity` | I | 纹理爬行、缺陷软化、结构崩坏 |
-| `aesthetic_quality` | —— | 唯一诚实的纯主观维；**只用成对比较**，不给绝对分（见下） |
+| `BASE` | 这个维度是什么 | skill 静态 |
+| `SCOPE` | **不该由它判的东西** | 当前激活的 skill 集合 |
+| `CONDITION` | 本条要求的主体/动作/运镜 | 条件编译 |
+| `PRIORS` | 本条内容的高发失败模式 | 条件 + 廉价检测器 |
+| `BRIEFING` | 信号与检测器**实测到了什么**(散文,不是 JSON) | 证据总线 |
+| `DO_NOT_PENALIZE` | **实测事实导出的免罚项** | 测量结果 |
+| `ANCHORS` | 严重度定标样例 | 匹配内容类型的锚样本 |
+| `TOOL_TRUST` | 该多信任数值 | 实测 reliability |
+| `RULES` | 判定纪律 | 全局不变 |
+| `OUTPUT` | 输出契约 | schema |
 
-**校准**：绝对 Likert 在判官和人身上都不可靠；成对比较显著更稳
-（这是 LLM-judge 校准文献的一致结论）。因此：
-* Conformance / Integrity 维度用**可数对象**算分 → 天然可比，不需要校准。
-* `aesthetic_quality` 走**成对比较 + Bradley-Terry**，只产出相对排名，不产出绝对分。
-* 需要绝对分时，用一小组**锚样本**（每维 3–5 个带分数的定标视频）把 BT 分数映射到刻度上。
+其中两个槽位是真正干活的:
+
+**`SCOPE`** 从激活的 skill 集合生成,告诉每个 skill 哪些问题属于它的兄弟维度、
+不要重复报告。没有这一条,每个 skill 都会为所有看得见的缺陷扣分,
+各维度分数会退化成彼此的副本——这正是多维报告失去价值的方式。
+
+**`DO_NOT_PENALIZE`** 是假阳性的刹车。VLM 判视频的多数误报,是**正确的观察被
+归错了类**:大幅运动下真实的运动模糊、暗光下真实的噪点、浅景深真实的虚化。
+这些只能靠**先测量再写进 prompt**来排除,例如:
+
+> 本段视频实测运动幅度很大。**运动模糊是物理上正确的表现**,不要把它当成清晰度缺陷。
+> 只有出现在低运动区域的模糊才算缺陷。
+
+> 画面中的人脸很小(占画面宽度 4%)。**在没有放大裁剪的情况下不得对人脸细节下结论**,
+> 看不清就报"证据不足"。
+
+这就是它必须**动态**构造的原因:这些句子无法预先写死,它们依赖对这一条视频的测量。
+
+prompt 组装后会输出 `manifest()`——每个片段的槽位、来源、字数都记录下来,
+所以一个反常的判决可以回溯到造成它的那个片段。
 
 ---
-
 ## 6. 验证（这一节决定项目成不成立）
 
 ### 6.1 合成缺陷注入 —— 零标注成本的完美 ground truth
