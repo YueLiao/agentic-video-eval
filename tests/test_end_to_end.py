@@ -10,9 +10,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from agenteval.engine.loop import LoopBudget                    # noqa: E402
 from agenteval.engine.orchestrator import evaluate              # noqa: E402
 from agenteval.llm.mock import ScriptedVLM                      # noqa: E402
+from agenteval.scoring.dimensions import REPORT_DIMENSIONS      # noqa: E402
 from agenteval.skills.human_integrity import HumanIntegrity     # noqa: E402
 from agenteval.skills.motion_quality import MotionQuality       # noqa: E402
 from agenteval.skills.physical_integrity import PhysicalIntegrity  # noqa: E402
+from agenteval.skills.static_integrity import StaticIntegrity   # noqa: E402
 from agenteval.skills.temporal_integrity import TemporalIntegrity  # noqa: E402
 
 VIDEO = sys.argv[1]
@@ -23,6 +25,7 @@ SKILLS = {
     "motion_quality":     lambda: MotionQuality(OUT / "motion", max_frames=81),
     "human_integrity":    lambda: HumanIntegrity(OUT / "human"),
     "physical_integrity": lambda: PhysicalIntegrity(OUT / "physical", max_frames=81),
+    "static_integrity":   lambda: StaticIntegrity(OUT / "static", sweep_calls=5),
 }
 
 SCRIPT = {
@@ -52,6 +55,18 @@ SCRIPT = {
          "args": {"bbox": [0.35, 0.25, 0.3, 0.35], "t0": 20, "t1": 50}},
         {"thought": "够了", "action": "conclude", "args": {"reason": "done"}}],
     "physical_integrity/verdict": {"summary": "未见物理违反", "findings": []},
+    "static_integrity/decide": [
+        {"thought": "继续粗筛", "action": "next_sheet", "args": {"batch_index": 2}},
+        {"thought": "f30 可疑,分块放大", "action": "tile", "args": {"t": 30, "grid": 2}},
+        {"thought": "原生分辨率确认", "action": "zoom",
+         "args": {"bbox": [0.5, 0.5, 0.2, 0.2], "t": 30}},
+        {"thought": "确认完毕", "action": "conclude", "args": {"reason": "done"}}],
+    "static_integrity/verdict": {
+        "summary": "f30 处物体结构不成立",
+        "findings": [{"kind": "structure_collapse", "severity": "minor", "t_span": [30, 31],
+                      "bbox": [0.5, 0.5, 0.2, 0.2], "confidence": 0.6,
+                      "rationale": "放大后该物体几何不连贯", "evidence": ["E05"]}]},
+    "static_integrity/falsify": {"verdict": "uphold", "reason": "对照区域正常"},
     # falsification: uphold the hand finding, retract the texture one
     "human_integrity/falsify": {"verdict": "uphold", "reason": "对照区域正常,指控成立"},
     "temporal_integrity/falsify": {"verdict": "retract",
@@ -78,12 +93,14 @@ def main() -> int:
     for f in res.prompt_manifests.get("human_integrity", []):
         print(f"  {f['slot']:16s} {f['source']:34s} {f['chars']:5d} chars")
 
-    print("\n== scores ==")
+    print("\n== 报告(6 维) ==")
+    print(res.score.table())
+
+    print("\n== skill detail ==")
     for name, d in res.score.dimensions.items():
-        flag = "" if d.applicable else f"  (n/a: {d.reason[:34]})"
+        flag = "" if d.applicable else f"  (n/a: {d.reason[:30]})"
         cap = f"  capped_by={d.capped_by}" if d.capped_by else ""
         print(f"  {name:22s} {d.score:5.2f}{cap}{flag}")
-    print(f"  {'OVERALL':22s} {res.score.overall:5.2f}")
     print(f"\n  retraction_rate={res.score.retraction_rate:.2f}"
           f"  caps={res.score.caps_fired}")
     print(f"  tool_calls={res.tool_calls} (bus cache hits={res.bus['cache_hits']})"
@@ -93,6 +110,12 @@ def main() -> int:
     assert res.score.dimensions["temporal_integrity"].n_retracted == 1
     assert res.score.dimensions["temporal_integrity"].n_findings == 0
     assert 0 < res.score.overall < 10
+    rep = res.score.report
+    assert set(rep) == set(REPORT_DIMENSIONS), sorted(rep)
+    assert rep["subject_fidelity"].applicable and rep["subject_fidelity"].score < 10
+    assert not rep["semantic_alignment"].applicable, "no conformance skill yet"
+    assert rep["visual_quality"].applicable, "static_integrity should cover it"
+    assert rep["temporal_consistency"].n_retracted == 1
     print("\nend-to-end OK")
     return 0
 

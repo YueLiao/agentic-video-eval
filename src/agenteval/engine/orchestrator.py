@@ -32,6 +32,7 @@ from agenteval.media.clip import VideoHandle
 from agenteval.prompting.builder import (PromptBuilder, Slot, briefing_from,
                                          scope_fragment)
 from agenteval.router.router import RouteDecision, route
+from agenteval.rubrics.taxonomy import rubric_for
 from agenteval.scoring.synthesis import VideoScore, synthesize
 from agenteval.skills.base import Skill, SkillContext, SkillVerdict
 
@@ -68,6 +69,11 @@ def _dynamic_prompt(skill: Skill, decision: RouteDecision,
     """Assemble this skill's system prompt for this specific clip."""
     pb = PromptBuilder()
     pb.add(Slot.BASE, skill.system_prompt, source=f"skill:{skill.name}")
+    # The defect taxonomy for this skill's own dimension. Without it the judge
+    # invents its own labels and its own severity scale, and findings stop being
+    # countable or comparable across clips.
+    pb.add(Slot.RUBRIC, rubric_for(skill.name), key=f"rubric:{skill.name}",
+           source=f"taxonomy:{skill.name}")
     pb.add(Slot.SCOPE, scope_fragment(skill.name, active), source="router:active_skills")
     cond = condition.get("prompt") or condition.get("prompt_zh") or ""
     if cond:

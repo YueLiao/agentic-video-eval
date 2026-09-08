@@ -26,6 +26,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Sequence
 
+from agenteval.scoring.dimensions import (DIMENSION_WEIGHT, REPORT_DIMENSIONS,
+                                          ReportDimension, dimension_of)
 from agenteval.skills.base import Finding, SkillVerdict
 
 SEVERITY_WEIGHT: dict[str, float] = {"minor": 0.10, "major": 0.35, "critical": 0.85}
@@ -73,7 +75,8 @@ class DimensionScore:
 @dataclass
 class VideoScore:
     overall: float
-    dimensions: dict[str, DimensionScore]
+    dimensions: dict[str, DimensionScore]        # per skill, the working detail
+    report: dict[str, ReportDimension] = field(default_factory=dict)  # the 6
     n_findings: int = 0
     n_retracted: int = 0
     retraction_rate: float = 0.0
@@ -82,11 +85,27 @@ class VideoScore:
     def to_json(self) -> dict[str, Any]:
         return {
             "overall": round(self.overall, 2),
-            "dimensions": {k: v.to_json() for k, v in self.dimensions.items()},
+            "report": {k: v.to_json() for k, v in self.report.items()},
+            "skill_detail": {k: v.to_json() for k, v in self.dimensions.items()},
             "n_findings": self.n_findings, "n_retracted": self.n_retracted,
             "retraction_rate": round(self.retraction_rate, 3),
             "caps_fired": self.caps_fired,
         }
+
+    def table(self) -> str:
+        rows = []
+        for k in REPORT_DIMENSIONS:
+            d = self.report.get(k)
+            if d is None:
+                continue
+            from agenteval.scoring.dimensions import LABEL_ZH
+            score = f"{d.score:5.2f}" if d.applicable else "  n/a"
+            note = d.reason[:34] if not d.applicable else (
+                f"capped by {d.capped_by}" if d.capped_by else
+                (f"{d.n_findings} finding(s)" if d.n_findings else ""))
+            rows.append(f"  {LABEL_ZH.get(k, k):8s} {k:24s} {score}   {note}")
+        rows.append(f"  {'总分':8s} {'overall':24s} {self.overall:5.2f}")
+        return "\n".join(rows)
 
 
 def coverage(f: Finding, total_frames: int) -> float:
@@ -188,4 +207,53 @@ def synthesize(verdicts: Iterable[SkillVerdict], *, total_frames: int,
     overall = (1 - alpha) * mean + alpha * min(mean, worst)
     rate = total_r / max(1, total_f + total_r)
     caps = [f"{d.dimension}:{d.capped_by}" for d, _ in scored if d.capped_by]
-    return VideoScore(overall, dims, total_f, total_r, rate, caps)
+
+    report = rollup(dims, disabled or {})
+    scored_r = [(r, DIMENSION_WEIGHT.get(k, 1.0))
+                for k, r in report.items() if r.applicable]
+    if scored_r:
+        mean_r = sum(r.score * w for r, w in scored_r) / sum(w for _, w in scored_r)
+        worst_r = min(r.score for r, _ in scored_r)
+        overall = (1 - alpha) * mean_r + alpha * min(mean_r, worst_r)
+    return VideoScore(overall, dims, report, total_f, total_r, rate, caps)
+
+
+def rollup(skill_scores: dict[str, DimensionScore],
+           disabled: dict[str, str]) -> dict[str, ReportDimension]:
+    """Fold per-skill results into the six reported dimensions.
+
+    Several skills can feed one dimension. They are combined by taking the
+    *worst* contributing score rather than the mean: the dimensions are already
+    coarse, and averaging inside one would let a clean sub-aspect mask a broken
+    one, which is the failure the six-dimension split exists to prevent.
+    """
+    buckets: dict[str, list[tuple[str, DimensionScore]]] = {}
+    for skill, ds in skill_scores.items():
+        key = dimension_of(skill=skill)
+        if key:
+            buckets.setdefault(key, []).append((skill, ds))
+
+    out: dict[str, ReportDimension] = {}
+    for key in REPORT_DIMENSIONS:
+        entries = buckets.get(key, [])
+        usable = [(s, d) for s, d in entries if d.applicable]
+        if not usable:
+            why = "; ".join(d.reason or disabled.get(s, "not run")
+                            for s, d in entries) or "no skill covers this dimension yet"
+            out[key] = ReportDimension(key, 0.0, applicable=False, reason=why,
+                                       contributing_skills=[s for s, _ in entries])
+            continue
+        worst = min(usable, key=lambda sd: sd[1].score)
+        tops: list[dict[str, Any]] = []
+        for _s, d in usable:
+            tops.extend(f for f in d.findings if not f.get("retracted"))
+        tops.sort(key=lambda f: {"critical": 0, "major": 1}.get(f.get("severity"), 2))
+        out[key] = ReportDimension(
+            key=key, score=worst[1].score, applicable=True,
+            n_findings=sum(d.n_findings for _, d in usable),
+            n_retracted=sum(d.n_retracted for _, d in usable),
+            capped_by=worst[1].capped_by,
+            contributing_skills=[s for s, _ in usable],
+            top_findings=tops[:3],
+        )
+    return out

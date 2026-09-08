@@ -163,7 +163,10 @@ def route(video: VideoHandle, condition: dict[str, Any],
                              "cues": cues})
 
     # ---- which skills ---------------------------------------------------
-    always = ["temporal_integrity", "motion_quality", "semantic_conformance"]
+    # static_integrity always runs: frame-observable defects are content-
+    # independent, and it is the only skill covering visual_quality.
+    always = ["temporal_integrity", "motion_quality", "static_integrity",
+              "semantic_conformance"]
     d.skills.extend(always)
     if has_human:
         d.skills.append("human_integrity")

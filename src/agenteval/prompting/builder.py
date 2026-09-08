@@ -9,6 +9,8 @@ on what the detectors measured, and on which other skills are running.
 So a prompt is *assembled* per input from typed fragments:
 
     BASE            what this dimension is
+    RUBRIC          the defect taxonomy for it: definitions, what each defect is
+                    confusably NOT, and per-defect severity anchors
     SCOPE           what it must NOT judge, derived from the active skill set,
                     so two skills cannot both charge for the same defect
     CONDITION       the specific entities / actions / camera asked for
@@ -40,6 +42,7 @@ from typing import Any, Iterable, Sequence
 
 class Slot(IntEnum):
     BASE = 10
+    RUBRIC = 15
     SCOPE = 20
     CONDITION = 30
     PRIORS = 40
@@ -53,6 +56,7 @@ class Slot(IntEnum):
 
 HEADINGS: dict[Slot, str] = {
     Slot.BASE: "",
+    Slot.RUBRIC: "## 缺陷清单与严重度标尺",
     Slot.SCOPE: "## 本维度的边界",
     Slot.CONDITION: "## 这条视频的生成条件",
     Slot.PRIORS: "## 针对本条内容的重点关注",
