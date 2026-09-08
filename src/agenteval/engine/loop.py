@@ -108,6 +108,36 @@ FALSIFY_SYSTEM = """\
 """
 
 
+#: Judges return confidence as words as often as numbers. Coercing with a bare
+#: float() raises, and the enclosing except then drops the entire finding --
+#: losing a real defect because of a formatting choice. Parse leniently instead.
+_CONF_WORDS: dict[str, float] = {
+    "high": 0.9, "very high": 0.95, "certain": 0.95, "confident": 0.9,
+    "medium": 0.6, "moderate": 0.6, "mid": 0.5,
+    "low": 0.3, "very low": 0.2, "uncertain": 0.3, "unsure": 0.3,
+    "高": 0.9, "较高": 0.8, "中": 0.6, "中等": 0.6, "低": 0.3, "较低": 0.35,
+}
+
+
+def parse_confidence(v: Any, default: float = 0.5) -> float:
+    if isinstance(v, bool):
+        return default
+    if isinstance(v, (int, float)):
+        return max(0.0, min(1.0, float(v)))
+    if isinstance(v, str):
+        s = v.strip().lower().rstrip("%")
+        try:
+            f = float(s)
+            return max(0.0, min(1.0, f / 100 if f > 1 else f))
+        except ValueError:
+            pass
+        # longest key first: "very low" must win over the "low" inside it
+        for k in sorted(_CONF_WORDS, key=len, reverse=True):
+            if k in s:
+                return _CONF_WORDS[k]
+    return default
+
+
 def _images_for(evidence: Sequence[Evidence], cap: int = 12,
                 presentation: Presentation = Presentation.COMPOSITE) -> list[ImageRef]:
     """Collect images under the skill's presentation policy.
@@ -231,7 +261,7 @@ def run_skill(skill: Skill, ctx: SkillContext, vlm: VLMClient,
                 severity=str(f.get("severity", "minor")),
                 t_span=tuple(f["t_span"][:2]) if f.get("t_span") else None,
                 bbox=tuple(f["bbox"][:4]) if f.get("bbox") else None,
-                confidence=float(f.get("confidence", 0.5)),
+                confidence=parse_confidence(f.get("confidence")),
                 rationale=str(f.get("rationale", ""))[:800],
                 evidence=[str(x) for x in (f.get("evidence") or [])],
                 aspect=(str(f["aspect"]) if f.get("aspect") else None),

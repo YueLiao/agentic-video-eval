@@ -139,6 +139,12 @@ VERDICT_SCHEMA: dict[str, Any] = {
 # Shared discipline appended to every skill prompt. Kept in one place because
 # these rules are what stop the two failure modes that matter: inventing defects
 # when asked to find some, and reciting tool numbers instead of looking.
+#
+# The confidence anchors exist because the first live run returned 0.5 on every
+# single finding across three models and eight skills. An unanchored 0..1 float
+# invites the midpoint, and a constant confidence makes every downstream use of
+# it -- escalation, weighting, triage -- silently inert. Discrete anchors tied
+# to what was actually seen give the number something to attach to.
 JUDGE_RULES = """\
 ## 通用规则
 1. 只依据给你的证据作答。看不清就说看不清,禁止脑补。

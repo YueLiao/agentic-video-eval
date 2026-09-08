@@ -113,6 +113,57 @@ def _fallback_graph(condition_id: str, text: str, camera: str | None) -> Require
                             {"compiler": "fallback", "degraded": True})
 
 
+#: Camera cues, for the deterministic backstop below. Kept minimal and literal:
+#: this is a safety net, not a parser.
+_CAMERA_CUES: dict[str, tuple[str, ...]] = {
+    "static": ("camera fixed", "fixed camera", "static camera", "locked off",
+               "camera is static", "固定机位", "镜头固定", "机位固定"),
+    "push_in": ("push in", "pushes in", "dolly in", "zoom in", "推近", "推进"),
+    "pull_out": ("pull out", "pulls out", "dolly out", "zoom out", "拉远", "拉出"),
+    "pan": ("pan left", "pan right", "pans ", "panning", "摇镜", "横移"),
+    "orbit": ("orbit", "arc around", "环绕"),
+    "follow": ("follows", "tracking shot", "跟拍", "跟随"),
+}
+
+
+def _backstop(g: RequirementGraph, text: str,
+              camera_hint: str | None) -> RequirementGraph:
+    """Add a camera requirement the compiler dropped.
+
+    Observed on the first live run: a condition ending "Workshop light, camera
+    fixed." produced a style requirement and no camera one. The instruction sits
+    at the end of a sentence alongside an ambient description, so it reads as
+    scene-setting rather than a directive -- and an explicit rule in the system
+    prompt did not prevent the omission.
+
+    That is the general lesson: a constraint that must always hold belongs in
+    code, not in prompt text. An LLM asked to always do something will
+    occasionally not, and a silently missing requirement is invisible -- the
+    aspect simply reports "condition specified no camera move" and everyone
+    believes it.
+    """
+    if any(r.kind == "camera" for r in g.requirements):
+        return g
+    low = (text or "").lower()
+    found = camera_hint
+    if not found:
+        for kind, cues in _CAMERA_CUES.items():
+            if any(c in low for c in cues):
+                found = kind
+                break
+    if not found:
+        return g
+    rid = f"r{len(g.requirements) + 1}"
+    g.requirements.append(Requirement(
+        rid=rid, kind="camera", text=f"运镜为 {found}", verify="trajectory",
+        aspect=KIND_TO_ASPECT["camera"], value=found, hard=True,
+        note="轻微抖动不算运镜错误;主体运动不等于镜头运动"))
+    if not g.camera:
+        g.camera = {"type": found, "speed": "normal"}
+    g.meta["camera_backstop"] = f"compiler omitted a camera requirement; added {found}"
+    return g
+
+
 def compile_condition(condition_id: str, text: str, llm: VLMClient | None = None,
                       *, camera_hint: str | None = None,
                       max_requirements: int = 15) -> RequirementGraph:
@@ -152,11 +203,12 @@ def compile_condition(condition_id: str, text: str, llm: VLMClient | None = None
              for e in (p.get("order") or [])
              if str(e.get("before")) in rids and str(e.get("after")) in rids]
 
-    g = RequirementGraph(
+    g = _backstop(RequirementGraph(
         condition_id=condition_id, condition_text=text, requirements=reqs,
         order=order, camera=p.get("camera") or {},
         invariants=[str(v) for v in (p.get("invariants") or [])],
-        meta={"compiler": llm.model, "n_raw": len(p.get("requirements") or [])})
+        meta={"compiler": llm.model, "n_raw": len(p.get("requirements") or [])}),
+        text, camera_hint)
     errs = validate(g)
     if errs:
         g.meta["validation_errors"] = errs
