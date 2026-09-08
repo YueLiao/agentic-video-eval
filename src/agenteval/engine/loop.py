@@ -210,6 +210,7 @@ def run_skill(skill: Skill, ctx: SkillContext, vlm: VLMClient,
                 confidence=float(f.get("confidence", 0.5)),
                 rationale=str(f.get("rationale", ""))[:800],
                 evidence=[str(x) for x in (f.get("evidence") or [])],
+                aspect=(str(f["aspect"]) if f.get("aspect") else None),
             ))
         except (TypeError, ValueError, KeyError):
             continue

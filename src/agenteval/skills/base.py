@@ -54,6 +54,9 @@ class Finding:
     confidence: float = 0.5
     rationale: str = ""
     evidence: list[str] = field(default_factory=list)
+    #: Overrides the defect-key lookup. Conformance findings are unmet
+    #: requirements rather than taxonomy defects, so they name their aspect.
+    aspect: str | None = None
     retracted: bool = False
     retraction_reason: str = ""
 
@@ -67,7 +70,8 @@ class Finding:
             "t_span": list(self.t_span) if self.t_span else None,
             "bbox": [round(v, 4) for v in self.bbox] if self.bbox else None,
             "confidence": round(self.confidence, 3), "rationale": self.rationale,
-            "evidence": self.evidence, "retracted": self.retracted,
+            "evidence": self.evidence, "aspect": self.aspect,
+            "retracted": self.retracted,
             "retraction_reason": self.retraction_reason,
         }
 

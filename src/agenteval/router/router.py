@@ -143,8 +143,18 @@ DARK = 55.0
 SMALL_FACE = 0.08
 
 
+#: Which requirement kinds each conformance skill answers for.
+CONFORMANCE_KINDS: dict[str, tuple[str, ...]] = {
+    "semantic_conformance": ("entity", "attribute", "count", "relation",
+                             "style", "text"),
+    "action_conformance": ("action", "order"),
+    "camera_conformance": ("camera",),
+}
+
+
 def route(video: VideoHandle, condition: dict[str, Any],
-          *, available: list[str] | None = None) -> RouteDecision:
+          *, available: list[str] | None = None,
+          graph: Any = None) -> RouteDecision:
     text = condition.get("prompt") or condition.get("prompt_zh") or ""
     parsed = parse_condition(text)
     cues = parsed["cues"]
@@ -165,8 +175,7 @@ def route(video: VideoHandle, condition: dict[str, Any],
     # ---- which skills ---------------------------------------------------
     # static_integrity always runs: frame-observable defects are content-
     # independent, and it is the only skill covering visual_quality.
-    always = ["temporal_integrity", "motion_quality", "static_integrity",
-              "semantic_conformance"]
+    always = ["temporal_integrity", "motion_quality", "static_integrity"]
     d.skills.extend(always)
     if has_human:
         d.skills.append("human_integrity")
@@ -176,10 +185,27 @@ def route(video: VideoHandle, condition: dict[str, Any],
         d.skills.append("physical_integrity")
     else:
         d.disabled["physical_integrity"] = "near-static scene with no物理事件线索"
-    if parsed["camera"]:
-        d.skills.append("camera_conformance")
+    # Conformance routing comes from the compiled graph when there is one.
+    # Keyword cues are a stopgap for running before compilation, and they miss
+    # real requirements -- "pushes in" against a "push in" cue, an action stated
+    # without any listed verb. The graph is the authority on what was asked for.
+    if graph is not None:
+        kinds = {r.kind for r in getattr(graph, "requirements", [])}
+        if getattr(graph, "order", None):
+            kinds.add("order")
+        for skill, wanted in CONFORMANCE_KINDS.items():
+            if kinds & set(wanted):
+                if skill not in d.skills:
+                    d.skills.append(skill)
+            else:
+                d.disabled[skill] = f"条件中没有 {'/'.join(wanted)} 类要求"
+        d.hints["n_requirements"] = len(getattr(graph, "requirements", []))
     else:
-        d.disabled["camera_conformance"] = "condition specifies no camera move"
+        if parsed["camera"]:
+            d.skills.append("camera_conformance")
+        else:
+            d.disabled["camera_conformance"] = "condition specifies no camera move"
+        d.disabled["action_conformance"] = "no compiled requirement graph"
     if available:
         keep = [s for s in d.skills if s in available]
         for s in d.skills:

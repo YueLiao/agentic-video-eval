@@ -29,6 +29,7 @@ from agenteval.engine.evidence import EvidenceBus
 from agenteval.engine.loop import LoopBudget, Step, falsify, run_skill
 from agenteval.llm.client import VLMClient
 from agenteval.media.clip import VideoHandle
+from agenteval.planning.schema import RequirementGraph
 from agenteval.prompting.builder import (PromptBuilder, Slot, briefing_from,
                                          scope_fragment)
 from agenteval.router.router import RouteDecision, route
@@ -92,12 +93,13 @@ def evaluate(video_path: str | Path, condition: dict[str, Any],
              skills: dict[str, Callable[[], Skill]], vlm: VLMClient,
              *, out_dir: str | Path, budget: LoopBudget | None = None,
              do_falsify: bool = True,
-             decision: RouteDecision | None = None) -> EvalResult:
+             decision: RouteDecision | None = None,
+             graph: "RequirementGraph | None" = None) -> EvalResult:
     t0 = time.perf_counter()
     video = VideoHandle(video_path)
     out = Path(out_dir); out.mkdir(parents=True, exist_ok=True)
 
-    d = decision or route(video, condition, available=list(skills))
+    d = decision or route(video, condition, available=list(skills), graph=graph)
     bus = EvidenceBus(video.hash)
     base = budget or LoopBudget()
 
@@ -136,6 +138,13 @@ def evaluate(video_path: str | Path, condition: dict[str, Any],
 
     from agenteval.scoring.synthesis import collect_measurements
     meas = collect_measurements(bus.snapshot(), d.to_json())
+    # Semantic aspects gate on the *condition* having asked for that kind of
+    # thing: a condition with no text requirement cannot fail text rendering,
+    # and scoring it would be meaningless rather than merely uninformative.
+    if graph is not None:
+        for r in graph.requirements:
+            meas[f"n_req_{r.kind}"] = meas.get(f"n_req_{r.kind}", 0) + 1
+        meas["n_req_order"] = len(graph.order)
     score = synthesize(verdicts, total_frames=video.total, disabled=d.disabled,
                        measurements=meas, skill_covers=covers_map)
     res = EvalResult(

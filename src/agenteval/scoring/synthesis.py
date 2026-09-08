@@ -321,7 +321,7 @@ def score_aspects(verdicts: Sequence[SkillVerdict], *, total_frames: int,
     by_aspect: dict[str, list[Finding]] = {}
     for v in verdicts:
         for f in v.findings:
-            key = DEFECT_TO_ASPECT.get(f.kind)
+            key = f.aspect or DEFECT_TO_ASPECT.get(f.kind)
             if key:
                 by_aspect.setdefault(key, []).append(f)
 

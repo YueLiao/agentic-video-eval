@@ -180,6 +180,43 @@ ASPECTS: tuple[Aspect, ...] = (
     Aspect("support_contact", "支撑接触", "physics", ("unsupported_float",),
            "low", "场景几何建模", ""),
 
+    # --- 语义一致性:是否做到了条件要求的事 ---
+    # These score against a compiled requirement graph, so their gate is the
+    # existence of requirements of that kind -- a condition that asked for no
+    # text cannot fail text rendering, and scoring it would be meaningless.
+    Aspect("entity_presence", "主体出现", "semantic", (), "high",
+           "条件对齐训练 / 主体 grounding",
+           "需条件中含实体要求", lambda ev: (
+               bool(ev.get("n_req_entity")), "条件中没有可核对的实体要求")),
+    Aspect("attribute_binding", "属性绑定", "semantic", (), "medium",
+           "属性绑定训练(颜色/材质与主体的对应)",
+           "需条件中含属性要求", lambda ev: (
+               bool(ev.get("n_req_attribute")), "条件中没有属性要求")),
+    Aspect("object_count", "数量正确", "semantic", (), "medium",
+           "计数能力 / 多实例生成",
+           "需条件中含数量要求", lambda ev: (
+               bool(ev.get("n_req_count")), "条件中没有数量要求")),
+    Aspect("spatial_relation", "空间关系", "semantic", (), "low",
+           "空间关系建模",
+           "需条件中含空间关系要求", lambda ev: (
+               bool(ev.get("n_req_relation")), "条件中没有空间关系要求")),
+    Aspect("action_execution", "动作执行", "semantic", (), "high",
+           "动作数据 / 动词条件对齐",
+           "需条件中含动作要求", lambda ev: (
+               bool(ev.get("n_req_action")), "条件中没有动作要求")),
+    Aspect("action_order", "动作顺序", "semantic", (), "medium",
+           "时序条件控制",
+           "需条件中含多动作时序关系", lambda ev: (
+               bool(ev.get("n_req_order")), "条件中没有动作顺序要求")),
+    Aspect("camera_control", "运镜控制", "semantic", (), "high",
+           "运镜条件控制 / 相机轨迹标注数据",
+           "需条件中指定了运镜", lambda ev: (
+               bool(ev.get("n_req_camera")), "条件中未指定运镜")),
+    Aspect("style_match", "风格匹配", "semantic", (), "medium",
+           "风格条件对齐",
+           "需条件中指定了风格", lambda ev: (
+               bool(ev.get("n_req_style")), "条件中未指定风格")),
+
     # --- 单帧画质 ---
     Aspect("structure_coherence", "结构完整性", "frame_quality",
            ("structure_collapse",), "high", "分辨率 / 细节保持",
