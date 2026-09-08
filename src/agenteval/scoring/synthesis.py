@@ -26,8 +26,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Sequence
 
-from agenteval.scoring.dimensions import (DIMENSION_WEIGHT, REPORT_DIMENSIONS,
-                                          ReportDimension, dimension_of)
+from agenteval.scoring.aspects import (ASPECTS, BY_GROUP, DEFECT_TO_ASPECT,
+                                       GROUP_LABEL_ZH, NOT_SCORED, Aspect)
 from agenteval.skills.base import Finding, SkillVerdict
 
 SEVERITY_WEIGHT: dict[str, float] = {"minor": 0.10, "major": 0.35, "critical": 0.85}
@@ -76,7 +76,9 @@ class DimensionScore:
 class VideoScore:
     overall: float
     dimensions: dict[str, DimensionScore]        # per skill, the working detail
-    report: dict[str, ReportDimension] = field(default_factory=dict)  # the 6
+    aspects: dict[str, "AspectScore"] = field(default_factory=dict)
+    groups: dict[str, float | None] = field(default_factory=dict)
+    not_scored: dict[str, str] = field(default_factory=lambda: dict(NOT_SCORED))
     n_findings: int = 0
     n_retracted: int = 0
     retraction_rate: float = 0.0
@@ -85,7 +87,10 @@ class VideoScore:
     def to_json(self) -> dict[str, Any]:
         return {
             "overall": round(self.overall, 2),
-            "report": {k: v.to_json() for k, v in self.report.items()},
+            "aspects": {k: v.to_json() for k, v in self.aspects.items()},
+            "groups": {k: (None if v is None else round(v, 2))
+                       for k, v in self.groups.items()},
+            "not_scored": self.not_scored,
             "skill_detail": {k: v.to_json() for k, v in self.dimensions.items()},
             "n_findings": self.n_findings, "n_retracted": self.n_retracted,
             "retraction_rate": round(self.retraction_rate, 3),
@@ -93,18 +98,27 @@ class VideoScore:
         }
 
     def table(self) -> str:
-        rows = []
-        for k in REPORT_DIMENSIONS:
-            d = self.report.get(k)
-            if d is None:
-                continue
-            from agenteval.scoring.dimensions import LABEL_ZH
-            score = f"{d.score:5.2f}" if d.applicable else "  n/a"
-            note = d.reason[:34] if not d.applicable else (
-                f"capped by {d.capped_by}" if d.capped_by else
-                (f"{d.n_findings} finding(s)" if d.n_findings else ""))
-            rows.append(f"  {LABEL_ZH.get(k, k):8s} {k:24s} {score}   {note}")
-        rows.append(f"  {'总分':8s} {'overall':24s} {self.overall:5.2f}")
+        rows: list[str] = []
+        for g, items in BY_GROUP.items():
+            gv = self.groups.get(g)
+            head = f"{GROUP_LABEL_ZH.get(g, g)}" + (
+                f"  [{gv:.2f}]" if gv is not None else "  [n/a]")
+            rows.append(f"\n  {head}")
+            for it in items:
+                a = self.aspects.get(it.key)
+                if a is None:
+                    continue
+                if not a.judgeable:
+                    rows.append(f"    {a.label:10s} {'':>6}   —  {a.reason}")
+                else:
+                    note = ""
+                    if a.n_findings:
+                        note = f"{a.n_findings} 处 ({a.worst_severity})"
+                        if a.actionable:
+                            note += f"  → {a.actionable}"
+                    rows.append(f"    {a.label:10s} {a.score:6.2f}   {note}")
+        rows.append(f"\n  {'总分':10s} {self.overall:6.2f}"
+                    f"   (仅计入可判项)")
         return "\n".join(rows)
 
 
@@ -169,6 +183,8 @@ def synthesize(verdicts: Iterable[SkillVerdict], *, total_frames: int,
                disabled: dict[str, str] | None = None,
                n_requirements: dict[str, int] | None = None,
                weights: dict[str, float] | None = None,
+               measurements: dict[str, Any] | None = None,
+               skill_covers: dict[str, tuple[str, ...]] | None = None,
                alpha: float = 0.5) -> VideoScore:
     """Combine per-skill verdicts into dimension scores and one overall.
 
@@ -179,6 +195,9 @@ def synthesize(verdicts: Iterable[SkillVerdict], *, total_frames: int,
     """
     w = {**DEFAULT_WEIGHTS, **(weights or {})}
     reqs = n_requirements or {}
+    verdicts_list = list(verdicts)
+    verdicts = verdicts_list
+    skill_covers = skill_covers or {}
     dims: dict[str, DimensionScore] = {}
     total_f = total_r = 0
 
@@ -208,16 +227,157 @@ def synthesize(verdicts: Iterable[SkillVerdict], *, total_frames: int,
     rate = total_r / max(1, total_f + total_r)
     caps = [f"{d.dimension}:{d.capped_by}" for d, _ in scored if d.capped_by]
 
-    report = rollup(dims, disabled or {})
-    scored_r = [(r, DIMENSION_WEIGHT.get(k, 1.0))
-                for k, r in report.items() if r.applicable]
-    if scored_r:
-        mean_r = sum(r.score * w for r, w in scored_r) / sum(w for _, w in scored_r)
-        worst_r = min(r.score for r, _ in scored_r)
-        overall = (1 - alpha) * mean_r + alpha * min(mean_r, worst_r)
-    return VideoScore(overall, dims, report, total_f, total_r, rate, caps)
+    examined: set[str] = set()
+    for v in verdicts_list:
+        if v.error is None:
+            examined.update(skill_covers.get(v.skill, ()))
+    asp = score_aspects(list(verdicts_list), total_frames=total_frames,
+                        measurements=measurements or {}, examined=examined)
+    judged = [a for a in asp.values() if a.judgeable and a.score is not None]
+    if judged:
+        # Weight by judgeability: a "low" aspect still reports, but must not
+        # move the headline as much as one we can actually measure.
+        w_by = {"high": 1.0, "medium": 0.7, "low": 0.4}
+        ws = [w_by.get(a.judgeability, 0.7) for a in judged]
+        mean_a = sum(a.score * w for a, w in zip(judged, ws)) / sum(ws)
+        worst_a = min(a.score for a in judged)
+        overall = (1 - alpha) * mean_a + alpha * min(mean_a, worst_a)
+    return VideoScore(overall, dims, asp, group_rollup(asp), dict(NOT_SCORED),
+                      total_f, total_r, rate, caps)
 
 
+@dataclass
+class AspectScore:
+    key: str
+    label: str
+    group: str
+    score: float | None                 # None when not judgeable
+    judgeable: bool = True
+    reason: str = ""                    # why not, when not
+    judgeability: str = "medium"
+    n_findings: int = 0
+    n_retracted: int = 0
+    worst_severity: str | None = None
+    actionable: str = ""
+    findings: list[dict[str, Any]] = field(default_factory=list)
+
+    def to_json(self) -> dict[str, Any]:
+        return {"key": self.key, "label": self.label, "group": self.group,
+                "score": None if self.score is None else round(self.score, 2),
+                "judgeable": self.judgeable, "reason": self.reason,
+                "judgeability": self.judgeability,
+                "n_findings": self.n_findings, "n_retracted": self.n_retracted,
+                "worst_severity": self.worst_severity,
+                "actionable": self.actionable, "findings": self.findings}
+
+
+def collect_measurements(bus_snapshot: dict[str, Any],
+                         routing: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Flatten what was measured on this clip, for the aspect gates.
+
+    Gates need facts, not opinions: how big the largest face was, whether hands
+    were found, how much of the clip the sweep actually covered. Those live
+    scattered across tool results, so they are lifted into one flat dict here
+    rather than each gate knowing the bus layout.
+    """
+    ev: dict[str, Any] = {}
+    if routing:
+        ev.update(routing.get("measurements") or {})
+        ev.update({k: v for k, v in (routing.get("hints") or {}).items()
+                   if isinstance(v, (int, float, bool, str))})
+        cues = (routing.get("hints") or {}).get("cues") or {}
+        ev["has_text"] = bool(cues.get("text"))
+    for _eid, e in (bus_snapshot.get("evidence") or {}).items():
+        val = e.get("value") or {}
+        for k in ("n_hands_max", "n_frames_with_face", "max_face_frac",
+                  "n_persons_max", "perceptual_coverage", "frame_coverage",
+                  "survival_rate", "mean_conf"):
+            if k in val and isinstance(val[k], (int, float)):
+                if k == "mean_conf" and e.get("tool") == "pose_detect":
+                    ev["pose_mean_conf"] = val[k]
+                elif k == "survival_rate":
+                    ev["track_survival"] = max(ev.get("track_survival", 0.0), val[k])
+                else:
+                    ev[k] = max(ev.get(k, 0), val[k]) if isinstance(val[k], (int, float)) else val[k]
+        # largest hand, derived from landmark spans
+        for fr in (val.get("per_frame") or []) if e.get("tool") == "hands_detect" else []:
+            for hd in fr.get("hands", []):
+                xs = [k[0] for k in hd.get("kpts", [])]
+                if xs:
+                    ev["max_hand_frac"] = max(ev.get("max_hand_frac", 0.0),
+                                              max(xs) - min(xs))
+    return ev
+
+
+def score_aspects(verdicts: Sequence[SkillVerdict], *, total_frames: int,
+                  measurements: dict[str, Any],
+                  examined: set[str] | None = None) -> dict[str, AspectScore]:
+    """Score each aspect from the findings assigned to it, subject to its gate.
+
+    Findings route by *defect type*, not by which skill produced them: a hand
+    defect belongs to hand structure whether the sweep or the human skill found
+    it. That keeps the report stable as skills are added or split.
+    """
+    by_aspect: dict[str, list[Finding]] = {}
+    for v in verdicts:
+        for f in v.findings:
+            key = DEFECT_TO_ASPECT.get(f.kind)
+            if key:
+                by_aspect.setdefault(key, []).append(f)
+
+    out: dict[str, AspectScore] = {}
+    for a in ASPECTS:
+        fs = by_aspect.get(a.key, [])
+        live = [f for f in fs if f.counts]
+        # "No finding" is only evidence of cleanliness if something looked.
+        if examined is not None and a.key not in examined:
+            out[a.key] = AspectScore(
+                a.key, a.label_zh, a.group, None, judgeable=False,
+                reason="未检查(没有 skill 覆盖该项)",
+                judgeability=a.judgeability, actionable=a.actionable)
+            continue
+        ok, why = a.check_gate(measurements)
+        if not ok:
+            out[a.key] = AspectScore(
+                a.key, a.label_zh, a.group, None, judgeable=False, reason=why,
+                judgeability=a.judgeability, actionable=a.actionable,
+                n_retracted=len(fs) - len(live))
+            continue
+        penalty = 0.0
+        worst = None
+        order = {"critical": 0, "major": 1, "minor": 2}
+        for f in live:
+            penalty += (SEVERITY_WEIGHT.get(f.severity, 0.1)
+                        * coverage(f, total_frames) * max(0.3, f.confidence))
+            if worst is None or order.get(f.severity, 3) < order.get(worst, 3):
+                worst = f.severity
+        score = 10.0 * max(0.0, 1.0 - min(1.0, penalty))
+        cap = SEVERITY_CAP.get(worst) if worst else None
+        if cap is not None:
+            score = min(score, cap)
+        out[a.key] = AspectScore(
+            a.key, a.label_zh, a.group, score, judgeability=a.judgeability,
+            n_findings=len(live), n_retracted=len(fs) - len(live),
+            worst_severity=worst, actionable=a.actionable if live else "",
+            findings=[f.to_json() for f in fs])
+    return out
+
+
+def group_rollup(aspects: dict[str, AspectScore]) -> dict[str, float | None]:
+    """Coarse per-group numbers, for leaderboards only.
+
+    Worst-of rather than mean, and ``None`` when no aspect in the group could be
+    judged. Provided because a ranking needs few numbers, but the aspect table
+    is the primary output: a group score cannot tell you whether to go fix hands
+    or fix identity.
+    """
+    out: dict[str, float | None] = {}
+    for g, items in BY_GROUP.items():
+        vals = [aspects[i.key].score for i in items
+                if i.key in aspects and aspects[i.key].judgeable
+                and aspects[i.key].score is not None]
+        out[g] = min(vals) if vals else None
+    return out
 def rollup(skill_scores: dict[str, DimensionScore],
            disabled: dict[str, str]) -> dict[str, ReportDimension]:
     """Fold per-skill results into the six reported dimensions.

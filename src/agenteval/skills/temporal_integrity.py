@@ -56,6 +56,8 @@ SYSTEM = """\
 class TemporalIntegrity(Skill):
     name = "temporal_integrity"
     dimension = "temporal_integrity"
+    covers = ("flicker", "texture_stability", "frame_continuity",
+                              "object_permanence")
     max_rounds = 4
 
     def __init__(self, out_dir: str | Path, *, max_loci: int = 8,

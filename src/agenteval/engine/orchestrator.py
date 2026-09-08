@@ -102,6 +102,7 @@ def evaluate(video_path: str | Path, condition: dict[str, Any],
     base = budget or LoopBudget()
 
     verdicts: list[SkillVerdict] = []
+    covers_map: dict[str, tuple[str, ...]] = {}
     steps: dict[str, list[dict[str, Any]]] = {}
     manifests: dict[str, list[dict[str, Any]]] = {}
     contexts: dict[str, SkillContext] = {}
@@ -123,6 +124,7 @@ def evaluate(video_path: str | Path, condition: dict[str, Any],
         prompt, manifest = _dynamic_prompt(skill, d, d.skills, bus, condition)
         manifests[name] = manifest
         object.__setattr__(skill, "_dynamic_prompt", prompt)
+        covers_map[skill.name] = tuple(skill.covers)
         v, st = run_skill(skill, ctx, vlm, b)
         verdicts.append(v)
         steps[name] = [s.to_json() for s in st]
@@ -132,7 +134,10 @@ def evaluate(video_path: str | Path, condition: dict[str, Any],
             if v.findings:
                 falsify(v, contexts[v.skill], vlm)
 
-    score = synthesize(verdicts, total_frames=video.total, disabled=d.disabled)
+    from agenteval.scoring.synthesis import collect_measurements
+    meas = collect_measurements(bus.snapshot(), d.to_json())
+    score = synthesize(verdicts, total_frames=video.total, disabled=d.disabled,
+                       measurements=meas, skill_covers=covers_map)
     res = EvalResult(
         video=str(video.path), condition=condition, score=score,
         verdicts=verdicts, routing=d.to_json(), steps=steps,

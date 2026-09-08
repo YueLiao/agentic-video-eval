@@ -56,6 +56,8 @@ SYSTEM = """\
 class PhysicalIntegrity(Skill):
     name = "physical_integrity"
     dimension = "physical_integrity"
+    covers = ("gravity", "rigidity", "interpenetration",
+                              "support_contact")
     max_rounds = 5
     presentation = Presentation.ORDERED
     max_images = 14

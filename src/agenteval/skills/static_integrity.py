@@ -70,6 +70,9 @@ SYSTEM = """\
 class StaticIntegrity(Skill):
     name = "static_integrity"
     dimension = "visual_quality"
+    covers = ("structure_coherence", "artifact_free", "lighting_logic",
+                              "text_rendering", "hand_structure", "face_structure",
+                              "limb_structure")
     max_rounds = 6
     presentation = Presentation.COMPOSITE
     max_images = 10

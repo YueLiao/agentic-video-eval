@@ -10,7 +10,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from agenteval.engine.loop import LoopBudget                    # noqa: E402
 from agenteval.engine.orchestrator import evaluate              # noqa: E402
 from agenteval.llm.mock import ScriptedVLM                      # noqa: E402
-from agenteval.scoring.dimensions import REPORT_DIMENSIONS      # noqa: E402
 from agenteval.skills.human_integrity import HumanIntegrity     # noqa: E402
 from agenteval.skills.motion_quality import MotionQuality       # noqa: E402
 from agenteval.skills.physical_integrity import PhysicalIntegrity  # noqa: E402
@@ -93,8 +92,11 @@ def main() -> int:
     for f in res.prompt_manifests.get("human_integrity", []):
         print(f"  {f['slot']:16s} {f['source']:34s} {f['chars']:5d} chars")
 
-    print("\n== 报告(6 维) ==")
+    print("\n== 报告(细粒度 aspects) ==")
     print(res.score.table())
+    print("\n  明确不评的项:")
+    for k, why in list(res.score.not_scored.items())[:3]:
+        print(f"    {k:26s} {why[:46]}")
 
     print("\n== skill detail ==")
     for name, d in res.score.dimensions.items():
@@ -110,12 +112,14 @@ def main() -> int:
     assert res.score.dimensions["temporal_integrity"].n_retracted == 1
     assert res.score.dimensions["temporal_integrity"].n_findings == 0
     assert 0 < res.score.overall < 10
-    rep = res.score.report
-    assert set(rep) == set(REPORT_DIMENSIONS), sorted(rep)
-    assert rep["subject_fidelity"].applicable and rep["subject_fidelity"].score < 10
-    assert not rep["semantic_alignment"].applicable, "no conformance skill yet"
-    assert rep["visual_quality"].applicable, "static_integrity should cover it"
-    assert rep["temporal_consistency"].n_retracted == 1
+    asp = res.score.aspects
+    assert asp["hand_structure"].judgeable and asp["hand_structure"].score < 10, \
+        "hand finding should land on hand_structure"
+    assert asp["hand_structure"].actionable, "a bad aspect must say what to do"
+    ungated = [k for k, a in asp.items() if not a.judgeable]
+    assert ungated and all(asp[k].reason for k in ungated), \
+        "every non-judgeable aspect must give a reason"
+    assert res.score.groups["human"] is not None
     print("\nend-to-end OK")
     return 0
 

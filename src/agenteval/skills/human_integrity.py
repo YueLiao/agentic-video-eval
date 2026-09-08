@@ -57,6 +57,8 @@ SYSTEM = """\
 class HumanIntegrity(Skill):
     name = "human_integrity"
     dimension = "human_integrity"
+    covers = ("hand_structure", "face_structure", "limb_structure",
+                              "identity_consistency", "skin_texture", "eye_behavior")
     max_rounds = 5
     presentation = Presentation.COMPOSITE
     max_images = 12

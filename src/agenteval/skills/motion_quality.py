@@ -54,6 +54,8 @@ SYSTEM = """\
 class MotionQuality(Skill):
     name = "motion_quality"
     dimension = "motion_quality"
+    covers = ("motion_magnitude", "motion_smoothness",
+                              "motion_naturalness")
     max_rounds = 4
     presentation = Presentation.ORDERED
     max_images = 14

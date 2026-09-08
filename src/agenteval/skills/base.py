@@ -149,6 +149,11 @@ JUDGE_RULES = """\
 class Skill(ABC):
     name: str
     dimension: str
+    #: Aspect keys this skill actually examines. Required, because "no finding"
+    #: only means "clean" for aspects something looked at. Without this an
+    #: unexamined aspect silently scores 10, which is the same error as
+    #: awarding a landscape full marks for subject fidelity.
+    covers: tuple[str, ...] = ()
     max_rounds: int = 4
     presentation: Presentation = Presentation.COMPOSITE
     max_images: int = 12
