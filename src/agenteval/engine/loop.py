@@ -59,6 +59,19 @@ class Step:
         return self.__dict__
 
 
+#: Restated immediately before the output block. The same four anchors live in
+#: JUDGE_RULES, but the first live run returned exactly 0.5 on all 14 findings
+#: with them there: as rule 7 of nine, 2500 characters up a prompt that also
+#: carries a rubric, a scope note and an evidence briefing, they were simply not
+#: read. An instruction has to sit where the model is when it writes the field.
+CONFIDENCE_CONTRACT = """\
+**confidence 只能是 0.9 / 0.7 / 0.4 / 0.2 四个值之一,禁止填 0.5:**
+- `0.9` 在放大证据里直接看清了,能说出是哪一帧、哪个部位、什么形态
+- `0.7` 看得到异常,但受分辨率/遮挡/运动影响,细节不完全确定
+- `0.4` 只是可疑,现有证据不足以确认
+- `0.2` 基本看不清,只是因为工具数值异常才提出
+"""
+
 FALSIFY_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": ["verdict", "reason"],
@@ -237,8 +250,13 @@ def run_skill(skill: Skill, ctx: SkillContext, vlm: VLMClient,
             + "\n\n## 现在给出结论\n"
             + "列出你确认的问题(findings)。每条必须带 evidence id、严重度、"
               "以及尽可能精确的 t_span(帧区间)和 bbox(归一化 x,y,w,h)。\n"
-              "没有问题就返回空的 findings 数组。\n"
-              "只输出 JSON: {\"summary\": \"...\", \"findings\": [...]}")
+              "没有问题就返回空的 findings 数组。\n\n"
+            + CONFIDENCE_CONTRACT
+            + "\n只输出 JSON:\n"
+              '{"summary": "...", "findings": [{"kind": "...", '
+              '"severity": "minor|major|critical", "confidence": 0.9|0.7|0.4|0.2, '
+              '"t_span": [起,止], "bbox": [x,y,w,h], "rationale": "...", '
+              '"evidence": ["E01"]}]}')
     vres = vlm.ask(system=skill.prompt + "\n" + JUDGE_RULES, user=user,
                    images=_images_for(evidence, skill.max_images, skill.presentation),
                    schema=VERDICT_SCHEMA,
