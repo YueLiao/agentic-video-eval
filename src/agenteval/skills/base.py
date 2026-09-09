@@ -83,6 +83,10 @@ class Finding:
 class SkillVerdict:
     skill: str
     findings: list[Finding] = field(default_factory=list)
+    #: aspect key -> clean | trace | minor | major | severe | unjudgeable.
+    #: A grade here is an explicit statement about that aspect; its absence
+    #: means the judge never spoke to it, which is a different thing entirely.
+    aspect_grades: dict[str, str] = field(default_factory=dict)
     summary: str = ""
     rounds: int = 0
     vlm_calls: int = 0
@@ -99,6 +103,7 @@ class SkillVerdict:
             "skill": self.skill, "summary": self.summary,
             "findings": [f.to_json() for f in self.findings],
             "n_findings": len(self.live), "n_retracted": len(self.findings) - len(self.live),
+            "aspect_grades": self.aspect_grades,
             "rounds": self.rounds, "vlm_calls": self.vlm_calls,
             "tool_calls": self.tool_calls,
             "budget_exhausted": self.budget_exhausted, "error": self.error,
@@ -120,6 +125,7 @@ VERDICT_SCHEMA: dict[str, Any] = {
     "required": ["summary", "findings"],
     "properties": {
         "summary": {"type": "string"},
+        "aspects": {"type": "object"},
         "findings": {
             "type": "array",
             "items": {

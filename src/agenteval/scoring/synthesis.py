@@ -321,8 +321,17 @@ def synthesize(verdicts: Iterable[SkillVerdict], *, total_frames: int,
     for v in verdicts_list:
         if v.error is None:
             examined.update(skill_covers.get(v.skill, ()))
+    all_grades: dict[str, str] = {}
+    for v in verdicts_list:
+        for k, g in (v.aspect_grades or {}).items():
+            prev = all_grades.get(k)
+            order = {"severe": 0, "major": 1, "minor": 2, "trace": 3,
+                     "clean": 4, "unjudgeable": 5}
+            if prev is None or order.get(g, 9) < order.get(prev, 9):
+                all_grades[k] = g
     asp = score_aspects(list(verdicts_list), total_frames=total_frames,
-                        measurements=measurements or {}, examined=examined)
+                        measurements=measurements or {}, examined=examined,
+                        grades=all_grades)
     judged = [a for a in asp.values() if a.judgeable and a.score is not None]
     if judged:
         overall = overall_from_aspects(judged, alpha=alpha)
@@ -410,9 +419,18 @@ def collect_measurements(bus_snapshot: dict[str, Any],
     return ev
 
 
+#: A grade the judge stated for an aspect with no finding attached. Used when
+#: it said "I looked and it is not clean" but did not raise a finding -- which
+#: happens, and previously scored a silent 10.
+STATED_ONLY_SCORE: dict[str, float] = {
+    "clean": 10.0, "trace": 8.5, "minor": 7.0, "major": 5.0, "severe": 3.0,
+}
+
+
 def score_aspects(verdicts: Sequence[SkillVerdict], *, total_frames: int,
                   measurements: dict[str, Any],
-                  examined: set[str] | None = None) -> dict[str, AspectScore]:
+                  examined: set[str] | None = None,
+                  grades: dict[str, str] | None = None) -> dict[str, AspectScore]:
     """Score each aspect from the findings assigned to it, subject to its gate.
 
     Findings route by *defect type*, not by which skill produced them: a hand
@@ -430,11 +448,27 @@ def score_aspects(verdicts: Sequence[SkillVerdict], *, total_frames: int,
     for a in ASPECTS:
         fs = by_aspect.get(a.key, [])
         live = [f for f in fs if f.counts]
-        # "No finding" is only evidence of cleanliness if something looked.
+        stated = (grades or {}).get(a.key)
+        # "No finding" is only evidence of cleanliness if something looked *and*
+        # said so. An aspect a skill covered but never spoke to is unexamined,
+        # not clean -- measured across three clips, 46 aspects scored a silent
+        # 10 against 7 with any deduction, and none of the 46 had been judged.
         if examined is not None and a.key not in examined:
             out[a.key] = AspectScore(
                 a.key, a.label_zh, a.group, None, judgeable=False,
                 reason="未检查(没有 skill 覆盖该项)",
+                judgeability=a.judgeability, actionable=a.actionable)
+            continue
+        if stated == "unjudgeable":
+            out[a.key] = AspectScore(
+                a.key, a.label_zh, a.group, None, judgeable=False,
+                reason="判官表示证据不足以判断该项",
+                judgeability=a.judgeability, actionable=a.actionable)
+            continue
+        if examined is not None and a.key in examined and not stated and not fs:
+            out[a.key] = AspectScore(
+                a.key, a.label_zh, a.group, None, judgeable=False,
+                reason="skill 覆盖了该项但判官未对它表态(沉默不等于无问题)",
                 judgeability=a.judgeability, actionable=a.actionable)
             continue
         ok, why = a.check_gate(measurements)
@@ -446,12 +480,19 @@ def score_aspects(verdicts: Sequence[SkillVerdict], *, total_frames: int,
             continue
         order = {"severe": 0, "major": 1, "minor": 2, "trace": 3}
         worst = (normalize_grade(min(live, key=lambda f: order.get(
-            normalize_grade(f.severity), 4)).severity) if live else None)
-        score, _ = _score_from_findings(live, total_frames)
+            normalize_grade(f.severity), 4)).severity) if live else stated)
+        if live:
+            score, _ = _score_from_findings(live, total_frames)
+        else:
+            # Stated non-clean with no finding attached: honour the statement,
+            # but at a milder anchor than a localized finding earns, since there
+            # is no evidence to point at. Previously this silently scored 10.
+            score = STATED_ONLY_SCORE.get(stated or "clean", 10.0)
         out[a.key] = AspectScore(
             a.key, a.label_zh, a.group, score, judgeability=a.judgeability,
             n_findings=len(live), n_retracted=len(fs) - len(live),
-            worst_severity=worst, actionable=a.actionable if live else "",
+            worst_severity=worst,
+            actionable=a.actionable if (live or (stated and stated != "clean")) else "",
             findings=[f.to_json() for f in fs])
     return out
 

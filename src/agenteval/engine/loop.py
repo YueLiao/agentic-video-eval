@@ -76,6 +76,34 @@ class Step:
 #: what the severity boundaries are actually written against. Extent and
 #: salience last, since both are facts about the whole clip rather than about
 #: the defect.
+#: The verdict asks for a grade on **every** aspect the skill covers, not just
+#: the ones the judge felt like mentioning.
+#:
+#: Measured on three clips: 46 aspects scored a clean 10 against 7 with any
+#: deduction -- but those 46 were never judged clean, they merely had no finding
+#: land on them. Asked to "list the problems you confirmed", a judge reports the
+#: one or two most salient and says nothing about the rest, and silence was
+#: being read as innocence. That is the same error as scoring an unexamined
+#: aspect 10, one level less obvious.
+#:
+#: Forcing a grade per aspect also separates "looked and it is fine" from "never
+#: came up", which the previous shape could not express at all.
+ASPECT_ROLL_CALL = """\
+## 逐项表态(必填)
+
+下面列出了本维度需要你逐一表态的检查项。**每一项都必须给出结论,不能跳过**:
+
+- `clean` 检查过,没有发现问题
+- `trace` / `minor` / `major` / `severe` 发现了问题,按缺陷清单的分档判据选档
+- `unjudgeable` 证据不足以判断这一项(说明缺什么证据)
+
+判为非 clean 的项,必须在 findings 里给出对应的条目;
+判为 clean 的项不需要 findings,但**你必须明确说它 clean,而不是不提它**。
+沉默不等于没问题——不提就等于没检查。
+
+检查项:
+"""
+
 VERDICT_CHAIN = """\
 ## 逐条判定的四个步骤(按顺序做,每步只看指定的图)
 
@@ -307,16 +335,28 @@ def run_skill(skill: Skill, ctx: SkillContext, vlm: VLMClient,
                 tool_calls += 1
         cov = assess([e.tool for e in evidence])
 
+    roll_call = ""
+    if skill.covers:
+        from agenteval.scoring.aspects import BY_KEY as _ASPECTS
+        items = []
+        for k in skill.covers:
+            a = _ASPECTS.get(k)
+            items.append(f"- `{k}` ({a.label_zh if a else k})")
+        roll_call = ASPECT_ROLL_CALL + "\n".join(items) + "\n"
+
     user = (skill.render_state(ctx, evidence, history)
             + "\n\n" + render_gaps(cov)
-            + "\n\n## 现在给出结论\n"
+            + "\n\n" + roll_call
+            + "\n## 现在给出结论\n"
             + "列出你确认的问题(findings)。每条必须带 evidence id、"
               "以及尽可能精确的 t_span(帧区间)和 bbox(归一化 x,y,w,h)。\n"
               "没有问题就返回空的 findings 数组。\n\n"
             + VERDICT_CHAIN + "\n"
             + CONFIDENCE_CONTRACT
             + "\n只输出 JSON:\n"
-              '{"summary": "...", "findings": [{"kind": "...", '
+              '{"summary": "...", '
+              '"aspects": {"<检查项 key>": "clean|trace|minor|major|severe|unjudgeable", ...}, '
+              '"findings": [{"kind": "...", '
               '"severity": "trace|minor|major|severe", '
               '"extent": "flash|brief|recurring|throughout", '
               '"salience": "peripheral|secondary|primary", '
@@ -338,6 +378,14 @@ def run_skill(skill: Skill, ctx: SkillContext, vlm: VLMClient,
 
     payload = vres.parsed or {}
     verdict.summary = str(payload.get("summary", ""))[:1000]
+    # Explicit per-aspect verdicts, so "clean" is a judgement rather than the
+    # absence of one.
+    raw_asp = payload.get("aspects")
+    if isinstance(raw_asp, dict):
+        for k, g in raw_asp.items():
+            key = str(k).strip()
+            if key in skill.covers:
+                verdict.aspect_grades[key] = str(g).strip().lower()
     missing_axes = list(cov.missing)
     for f in payload.get("findings", []) or []:
         try:
