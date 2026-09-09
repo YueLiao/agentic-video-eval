@@ -32,6 +32,7 @@ from agenteval.engine.actions import (CONCLUDE, DECISION_SCHEMA, Action,
                                       decision_instructions)
 from agenteval.engine.evidence import Evidence
 from agenteval.llm.client import ImageRef, VLMClient
+from agenteval.rubrics.taxonomy import normalize_grade
 from agenteval.skills.base import (JUDGE_RULES, VERDICT_SCHEMA, Finding,
                                    Presentation, Skill, SkillContext,
                                    SkillVerdict)
@@ -80,7 +81,7 @@ FALSIFY_SCHEMA: dict[str, Any] = {
         "alternative": {"type": "string"},
         "evidence_for_alternative": {"type": "string"},
         "reason": {"type": "string"},
-        "severity": {"enum": ["minor", "major", "critical"]},
+        "severity": {"enum": ["trace", "minor", "major", "severe"]},
     },
 }
 
@@ -254,7 +255,7 @@ def run_skill(skill: Skill, ctx: SkillContext, vlm: VLMClient,
             + CONFIDENCE_CONTRACT
             + "\n只输出 JSON:\n"
               '{"summary": "...", "findings": [{"kind": "...", '
-              '"severity": "minor|major|critical", "confidence": 0.9|0.7|0.4|0.2, '
+              '"severity": "trace|minor|major|severe", "confidence": 0.9|0.7|0.4|0.2, '
               '"t_span": [起,止], "bbox": [x,y,w,h], "rationale": "...", '
               '"evidence": ["E01"]}]}')
     vres = vlm.ask(system=skill.prompt + "\n" + JUDGE_RULES, user=user,
@@ -336,7 +337,9 @@ def falsify(verdict: SkillVerdict, ctx: SkillContext, vlm: VLMClient,
             # Neither confirmed nor overturned: keep it, but weakened, so it
             # cannot dominate a score on evidence nobody could read.
             f.confidence = min(f.confidence, 0.3)
-            f.severity = "minor" if f.severity == "critical" else f.severity
+            # A finding nobody could verify should not also carry the top grade.
+            f.severity = {"severe": "major", "major": "minor"}.get(
+                normalize_grade(f.severity), normalize_grade(f.severity))
             f.retraction_reason = f"证据不足,降权保留:{str(p.get('reason',''))[:200]}"
         elif p.get("severity"):
             f.severity = str(p["severity"])

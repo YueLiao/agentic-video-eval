@@ -124,7 +124,7 @@ VERDICT_SCHEMA: dict[str, Any] = {
                 "required": ["kind", "severity", "confidence", "rationale", "evidence"],
                 "properties": {
                     "kind": {"type": "string"},
-                    "severity": {"enum": ["minor", "major", "critical"]},
+                    "severity": {"enum": ["trace", "minor", "major", "severe"]},
                     "t_span": {"type": "array", "items": {"type": "integer"}},
                     "bbox": {"type": "array", "items": {"type": "number"}},
                     "confidence": {"type": "number"},

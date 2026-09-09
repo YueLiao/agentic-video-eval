@@ -26,11 +26,16 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Sequence
 
+from agenteval.rubrics.taxonomy import GRADE_SCORE, normalize_grade
 from agenteval.scoring.aspects import (ASPECTS, BY_GROUP, DEFECT_TO_ASPECT,
                                        GROUP_LABEL_ZH, NOT_SCORED, Aspect)
 from agenteval.skills.base import Finding, SkillVerdict
 
-SEVERITY_WEIGHT: dict[str, float] = {"minor": 0.10, "major": 0.35, "critical": 0.85}
+#: How much an additional finding of this grade erodes the score below the
+#: leading one's anchor.
+SEVERITY_WEIGHT: dict[str, float] = {
+    "trace": 0.04, "minor": 0.12, "major": 0.30, "severe": 0.60,
+}
 
 #: The ceiling a finding of this grade imposes: however clean everything else
 #: is, one critical structural failure means the aspect is not above 3.0.
@@ -45,7 +50,7 @@ SEVERITY_WEIGHT: dict[str, float] = {"minor": 0.10, "major": 0.35, "critical": 0
 #:
 #: Now the ceiling sets where the aspect *starts* once that grade is present,
 #: and the accumulated penalty continues to push it down from there.
-SEVERITY_CEILING: dict[str, float] = {"critical": 3.0, "major": 6.5, "minor": 9.0}
+SEVERITY_CEILING: dict[str, float] = dict(GRADE_SCORE)
 
 #: Integrity dimensions start clean and lose points; conformance dimensions are
 #: satisfaction ratios and start empty. They must not be aggregated the same way.
@@ -178,14 +183,15 @@ def _score_from_findings(live: Sequence[Finding],
     """
     if not live:
         return 10.0, None
-    order = {"critical": 0, "major": 1, "minor": 2}
+    order = {"severe": 0, "major": 1, "minor": 2, "trace": 3}
     # Index rather than the object: identity comparison would skip every finding
     # that happens to be the same object, and more importantly it makes the
     # "exclude the leading finding" rule depend on object identity rather than
     # on position, which is not a property real data guarantees.
-    lead_i = min(range(len(live)), key=lambda i: order.get(live[i].severity, 3))
+    lead_i = min(range(len(live)),
+                 key=lambda i: order.get(normalize_grade(live[i].severity), 4))
     worst = live[lead_i]
-    ceiling = SEVERITY_CEILING.get(worst.severity, 10.0)
+    ceiling = SEVERITY_CEILING.get(normalize_grade(worst.severity), 6.0)
 
     # How far the leading finding actually pulls the score down to its ceiling.
     # Confidence and extent belong here rather than only in the residual: a
@@ -202,7 +208,7 @@ def _score_from_findings(live: Sequence[Finding],
     for i, f in enumerate(live):
         if i == lead_i:
             continue
-        residual += (SEVERITY_WEIGHT.get(f.severity, 0.10)
+        residual += (SEVERITY_WEIGHT.get(normalize_grade(f.severity), 0.12)
                      * coverage(f, total_frames) * max(0.3, f.confidence))
     score *= max(0.0, 1.0 - min(1.0, residual))
     cap_by = worst.kind if ceiling < 10.0 else None
@@ -417,9 +423,9 @@ def score_aspects(verdicts: Sequence[SkillVerdict], *, total_frames: int,
                 judgeability=a.judgeability, actionable=a.actionable,
                 n_retracted=len(fs) - len(live))
             continue
-        order = {"critical": 0, "major": 1, "minor": 2}
-        worst = (min(live, key=lambda f: order.get(f.severity, 3)).severity
-                 if live else None)
+        order = {"severe": 0, "major": 1, "minor": 2, "trace": 3}
+        worst = (normalize_grade(min(live, key=lambda f: order.get(
+            normalize_grade(f.severity), 4)).severity) if live else None)
         score, _ = _score_from_findings(live, total_frames)
         out[a.key] = AspectScore(
             a.key, a.label_zh, a.group, score, judgeability=a.judgeability,
@@ -473,7 +479,8 @@ def rollup(skill_scores: dict[str, DimensionScore],
         tops: list[dict[str, Any]] = []
         for _s, d in usable:
             tops.extend(f for f in d.findings if not f.get("retracted"))
-        tops.sort(key=lambda f: {"critical": 0, "major": 1}.get(f.get("severity"), 2))
+        tops.sort(key=lambda f: {"severe": 0, "major": 1, "minor": 2}.get(
+            normalize_grade(f.get("severity")), 3))
         out[key] = ReportDimension(
             key=key, score=worst[1].score, applicable=True,
             n_findings=sum(d.n_findings for _, d in usable),
