@@ -539,23 +539,27 @@ def overall_from_aspects(judged: Sequence[AspectScore], *, alpha: float = 0.5,
     return (1 - alpha) * mean_focus + alpha * worst
 
 
-def composite_views(aspects: dict[str, AspectScore]) -> dict[str, float | None]:
+def composite_views(aspects: dict[str, AspectScore],
+                    agg: str | None = None) -> dict[str, float | None]:
     """Cross-cutting composites, for comparing against human evaluation axes.
 
-    Built from the *worst* contributing aspect rather than the mean, for the
-    same reason the headline is: averaging lets a clean sub-aspect mask a broken
-    one, and a human rating "运动合理性" is reacting to whatever went wrong, not
-    to the average of things that went right.
+    Leans toward the worst contributing aspect without being decided by it.
+    Plain averaging lets a clean sub-aspect mask a broken one; taking the worst
+    saturates when several are bad, which measured badly -- on 100 human-labelled
+    pairs it zeroed the margin on 8 of 17 strongly-preferred pairs and left a
+    quarter of all pairs undecidable.
 
     `None` when nothing feeding it could be judged, so a composite never
     silently reports a number built from one aspect out of five.
     """
+    from agenteval.scoring.aggregate_fn import AGGREGATORS, DEFAULT
+    fn = AGGREGATORS.get(agg or DEFAULT, AGGREGATORS[DEFAULT])
     out: dict[str, float | None] = {}
     for name, keys in COMPOSITE_VIEWS.items():
         vals = [aspects[k].score for k in keys
                 if k in aspects and aspects[k].judgeable
                 and aspects[k].score is not None]
-        out[name] = min(vals) if vals else None
+        out[name] = fn(vals) if vals else None
     return out
 
 
