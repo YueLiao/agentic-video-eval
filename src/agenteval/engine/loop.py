@@ -65,6 +65,43 @@ class Step:
 #: with them there: as rule 7 of nine, 2500 characters up a prompt that also
 #: carries a rubric, a scope note and an evidence briefing, they were simply not
 #: read. An instruction has to sit where the model is when it writes the field.
+#: The verdict is decomposed into four questions asked in order, each bound to
+#: the view that can answer it. Left to summarise freely, a judge collapses all
+#: four axes onto one impression and then reports whatever grade that impression
+#: felt like -- which is how 85% of findings ended up in the same grade.
+#:
+#: The order matters. Existence first, because a grade for a defect that is not
+#: there is worse than no finding. Then visibility at normal scale, which is
+#: what the severity boundaries are actually written against. Extent and
+#: salience last, since both are facts about the whole clip rather than about
+#: the defect.
+VERDICT_CHAIN = """\
+## 逐条判定的四个步骤(按顺序做,每步只看指定的图)
+
+**第 1 步 · 存在性** —— 看放大图。
+这个缺陷真的存在吗?能不能说出它具体是什么形态、在哪一帧?
+说不出来就不要报这条。看不清就报 confidence 0.2 并说明。
+
+**第 2 步 · 正常尺寸下是否可见** —— **看全图(原始观看尺寸)那一张**,不要看放大图。
+这一步决定 severity,而 severity 的分档判据问的就是"正常观看会不会注意到":
+  - 全图里一眼就能看出来 → `major` 或 `severe`
+  - 全图里看不出来,放大后才明显 → `minor`
+  - 放大后还要逐帧比对才发现 → `trace`
+**如果你手上没有全图、只有放大图,就不能判 major**,应当报 confidence 偏低并说明证据不足。
+
+**第 3 步 · 持续范围** —— 看覆盖全片的那组图。
+数一下有问题的时刻占几个:1 个=`flash`,2-3 个连续=`brief`,
+间隔出现=`recurring`,几乎每个都有=`throughout`。
+**只在一个时间窗里看到,不等于 throughout**——没有全片证据时选 `brief` 并降低 confidence。
+
+**第 4 步 · 显著位置** —— 看全图的构图。
+黄框/问题区域落在画面主体上(观众正在看的地方)=`primary`;
+落在次要主体或主体的非焦点部位=`secondary`;落在边缘或背景=`peripheral`。
+
+四步的答案彼此独立。**严重度高不代表范围大,范围大不代表位置显著**——
+分别按各自的判据填,不要用一个整体印象去套四个字段。
+"""
+
 CONFIDENCE_CONTRACT = """\
 **confidence 只能是 0.9 / 0.7 / 0.4 / 0.2 四个值之一,禁止填 0.5:**
 - `0.9` 在放大证据里直接看清了,能说出是哪一帧、哪个部位、什么形态
@@ -247,11 +284,23 @@ def run_skill(skill: Skill, ctx: SkillContext, vlm: VLMClient,
             break                      # repeating itself: stop paying for it
 
     # ---- verdict ---------------------------------------------------------
+    # Top up with the views the grading chain needs but the search had no
+    # reason to fetch.
+    try:
+        extra_ev = skill.verdict_evidence(ctx, evidence)
+    except Exception:  # noqa: BLE001 - a missing view must not lose the verdict
+        extra_ev = []
+    for e in extra_ev:
+        if e.eid not in {x.eid for x in evidence}:
+            evidence.append(e)
+            tool_calls += 1
+
     user = (skill.render_state(ctx, evidence, history)
             + "\n\n## 现在给出结论\n"
-            + "列出你确认的问题(findings)。每条必须带 evidence id、严重度、"
+            + "列出你确认的问题(findings)。每条必须带 evidence id、"
               "以及尽可能精确的 t_span(帧区间)和 bbox(归一化 x,y,w,h)。\n"
               "没有问题就返回空的 findings 数组。\n\n"
+            + VERDICT_CHAIN + "\n"
             + CONFIDENCE_CONTRACT
             + "\n只输出 JSON:\n"
               '{"summary": "...", "findings": [{"kind": "...", '

@@ -195,6 +195,21 @@ class Skill(ABC):
         belong here: they cost nothing and they aim the first question."""
         return []
 
+    def verdict_evidence(self, ctx: SkillContext,
+                         evidence: Sequence[Evidence]) -> list[Evidence]:
+        """Views the graded verdict needs, beyond whatever the search gathered.
+
+        The search returns magnified crops, because that is what finding a
+        defect requires. Grading it requires the opposite: severity is defined
+        against normal viewing scale, salience against the whole composition,
+        and extent against the whole clip. A judge handed only crops cannot
+        answer three of the four questions it is asked, and defaults instead --
+        which is how 85% of findings landed in one grade.
+
+        Skills that grade localized defects override this to supply the pair.
+        """
+        return []
+
     def applies(self, ctx: SkillContext) -> bool:
         """Router hook. A skill that cannot apply should say so rather than
         return a meaningless full score."""

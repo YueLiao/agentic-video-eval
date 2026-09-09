@@ -68,9 +68,21 @@ def _crop(frame: np.ndarray, bbox, pad: float, side: int) -> np.ndarray:
 
 
 def _tile(imgs: Sequence[np.ndarray], cols: int, gap: int = 6) -> np.ndarray:
+    """Grid of images, padding to a common cell so tiles of different sizes
+    (a full frame beside a square crop) compose without distorting either."""
     if not imgs:
         return np.zeros((8, 8, 3), np.uint8)
-    h, w = imgs[0].shape[:2]
+    h = max(im.shape[0] for im in imgs)
+    w = max(im.shape[1] for im in imgs)
+    padded = []
+    for im in imgs:
+        if im.shape[0] == h and im.shape[1] == w:
+            padded.append(im)
+            continue
+        cell = np.full((h, w, 3), 32, np.uint8)
+        cell[: im.shape[0], : im.shape[1]] = im
+        padded.append(cell)
+    imgs = padded
     rows = (len(imgs) + cols - 1) // cols
     canvas = np.full((rows * h + (rows - 1) * gap,
                       cols * w + (cols - 1) * gap, 3), 32, np.uint8)
@@ -485,4 +497,107 @@ def motion_trail(video: VideoHandle, out_dir: Path, *, t0: int, t1: int,
               "均匀铺开=平滑运动;出现断档=瞬移;堆在一处=停滞。"
               "**叠加图会让复杂场景显得很乱**,只在主体明确时可用,"
               "且必须回到顺序帧确认。"),
+    )
+
+
+# ---- paired views: the evidence a graded judgement actually needs ----------
+# A grade boundary like "would you notice this at normal viewing speed?" cannot
+# be answered from a magnified crop, and a judge given only crops has no way to
+# say anything but "yes, obvious" -- which is what put 85% of findings in the
+# same grade. Salience has the same problem: whether a defect sits on the
+# subject or in the background is a fact about the whole frame, invisible once
+# you have cropped to the defect.
+#
+# So the views that support a graded verdict come in pairs: the full frame at
+# viewing scale, and the same moment magnified, in one image so the model can
+# see both without holding one in memory.
+
+def paired_view(video: VideoHandle, out_dir: Path, *, bbox, t: int,
+                full_side: int = 560, zoom_side: int = 420,
+                tag: str = "paired") -> ToolResult:
+    """Full frame with the region marked, beside the magnified crop.
+
+    Answers three things one crop cannot: is it visible at normal scale
+    (severity), where does it sit in the composition (salience), and what does
+    it actually look like (existence).
+    """
+    import cv2
+    t = max(0, min(video.total - 1, int(t)))
+    fr = video.read([t])
+    if not fr:
+        return ToolResult(value={"error": "no frame"}, reliability=0.0)
+    full = _resize_side(fr[0], full_side)
+    h, w = full.shape[:2]
+    x, y, bw, bh = bbox
+    p0 = (int(x * w), int(y * h))
+    p1 = (int(min(1.0, x + bw) * w), int(min(1.0, y + bh) * h))
+    cv2.rectangle(full, p0, p1, (0, 230, 255), 2)
+    crop = _crop(fr[0], bbox, 0.3, zoom_side)
+    img = _tile([_label(full, f"f{t} 全图(原始观看尺寸)"),
+                 _label(crop, f"f{t} 放大 {zoom_side}px")], 2)
+    p = _write(out_dir / tag, f"{tag}_t{t:04d}", img)
+    return ToolResult(
+        value={"t": t, "bbox": [round(v, 4) for v in bbox]},
+        images=[p], reliability=1.0, backend="paired_view",
+        hint=("左=整帧,按接近正常观看的尺寸显示,黄框标出可疑区域;右=同一帧该区域的放大。\n"
+              "**判断严重度时看左边**:这个问题在左图(正常尺寸)里看得出来吗?"
+              "看不出来就不是 major。\n"
+              "**判断显著位置时也看左边**:黄框落在画面主体上,还是边缘/背景?\n"
+              "右图只用来确认问题**是否真的存在**、具体是什么形态。"),
+    )
+
+
+def scale_ladder(video: VideoHandle, out_dir: Path, *, bbox, t: int,
+                 tag: str = "ladder") -> ToolResult:
+    """The same region at three magnifications, in one image.
+
+    Where a defect first becomes visible as you zoom in *is* its severity, so
+    showing the ladder makes the grade boundary something the model can read off
+    rather than estimate.
+    """
+    import cv2
+    t = max(0, min(video.total - 1, int(t)))
+    fr = video.read([t])
+    if not fr:
+        return ToolResult(value={"error": "no frame"}, reliability=0.0)
+    tiles = [_label(_resize_side(fr[0], 420), "1x 全图")]
+    for mult, name in ((2.0, "2x"), (4.0, "4x")):
+        x, y, bw, bh = bbox
+        cx, cy = x + bw / 2, y + bh / 2
+        side = max(bw, bh) * (4.0 / mult)
+        b = (max(0.0, cx - side / 2), max(0.0, cy - side / 2),
+             min(1.0, side), min(1.0, side))
+        tiles.append(_label(_crop(fr[0], b, 0.0, 420), f"{name} 放大"))
+    p = _write(out_dir / tag, f"{tag}_t{t:04d}", _tile(tiles, 3))
+    return ToolResult(
+        value={"t": t, "levels": ["1x", "2x", "4x"]},
+        images=[p], reliability=1.0, backend="scale_ladder",
+        hint=("同一处在三个放大级别下的样子。**问题在哪一级才变得明显,就对应哪一档**:\n"
+              "- 1x(全图)就能看出来 → major 或更重\n"
+              "- 2x 才看得出 → minor\n"
+              "- 4x 才看得出 → trace\n"
+              "这是严重度分档最直接的依据,不要凭印象估。"),
+    )
+
+
+def temporal_extent(video: VideoHandle, out_dir: Path, *, bbox, n: int = 8,
+                    side: int = 260, tag: str = "extent") -> ToolResult:
+    """The same region sampled across the *whole* clip, for judging extent.
+
+    Extent asks how much of the clip a defect occupies, which cannot be read
+    from evidence drawn from one window -- yet a window is what the search
+    naturally produces, since it went there because that is where the defect
+    was. Without a whole-clip view the judge has no basis to distinguish a flash
+    from something running throughout.
+    """
+    idx = uniform_indices(video.total, n)
+    tiles = [_label(_crop(f, bbox, 0.25, side), f"f{i}")
+             for i, f in zip(idx, video.read(idx))]
+    p = _write(out_dir / tag, f"{tag}_all", _tile(tiles, min(n, 4)))
+    return ToolResult(
+        value={"indices": idx, "spans_whole_clip": True},
+        images=[p], reliability=1.0, backend="temporal_extent",
+        hint=(f"同一区域在**整段视频**上的均匀采样({n} 个时刻,覆盖全片)。\n"
+              "**判断 extent 用这张图**:数一下有问题的格子占几格——\n"
+              "1 格=flash,2-3 格且连续=brief,间隔出现=recurring,几乎每格都有=throughout。"),
     )

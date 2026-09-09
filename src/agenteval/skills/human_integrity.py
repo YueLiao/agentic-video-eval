@@ -61,7 +61,7 @@ class HumanIntegrity(Skill):
                               "identity_consistency", "skin_texture", "eye_behavior")
     max_rounds = 5
     presentation = Presentation.COMPOSITE
-    max_images = 12
+    max_images = 14
 
     def __init__(self, out_dir: str | Path, *, n_probe: int = 12) -> None:
         self.out_dir = Path(out_dir)
@@ -114,6 +114,36 @@ class HumanIntegrity(Skill):
                 if best is None or b[2] > best[2]:
                     best, best_i = b, p["idx"]
         return (tuple(best), best_i) if best else (None, None)
+
+    def verdict_evidence(self, ctx: SkillContext, evidence) -> list[Evidence]:
+        """Supply the full-frame and whole-clip views the grading chain needs.
+
+        Everything this skill gathers while searching is magnified, because that
+        is what makes a finger defect visible at all. But the severity boundary
+        is written against normal viewing scale and salience against the whole
+        composition, so grading from crops alone leaves three of the four
+        questions unanswerable.
+        """
+        bb, at = self._hand_bbox()
+        if bb is None:
+            bb, at = self._face_bbox()
+        if bb is None:
+            return []
+        t = int(at or ctx.video.total // 2)
+        out: list[Evidence] = []
+        out.append(ctx.bus.get_or_run(
+            "paired_view", "1.0",
+            lambda: R.paired_view(ctx.video, self.out_dir, bbox=bb, t=t),
+            bbox=[round(v, 3) for v in bb], t=t))
+        out.append(ctx.bus.get_or_run(
+            "scale_ladder", "1.0",
+            lambda: R.scale_ladder(ctx.video, self.out_dir, bbox=bb, t=t),
+            bbox=[round(v, 3) for v in bb], t=t))
+        out.append(ctx.bus.get_or_run(
+            "temporal_extent", "1.0",
+            lambda: R.temporal_extent(ctx.video, self.out_dir, bbox=bb),
+            bbox=[round(v, 3) for v in bb]))
+        return out
 
     def _hand_bbox(self):
         per = (self._hands.result.value.get("per_frame") or []) if self._hands else []

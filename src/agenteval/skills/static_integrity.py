@@ -119,6 +119,26 @@ class StaticIntegrity(Skill):
             batch_index=n) for n, b in enumerate(first[:2])]
         return [cov, *sheets]
 
+    def verdict_evidence(self, ctx: SkillContext, evidence) -> list[Evidence]:
+        """Pair the sweep's confirmations with a normal-scale view.
+
+        The cascade ends on `zoom`, so by grading time everything on the bus is
+        magnified -- and this skill's whole point is finding defects that are
+        invisible until magnified, which makes the severity question (is it
+        visible unmagnified?) exactly the one it cannot answer from its own
+        evidence.
+        """
+        for e in reversed(list(evidence)):
+            bb = e.args.get("bbox")
+            t = e.args.get("t")
+            if bb and t is not None:
+                b = tuple(float(v) for v in bb[:4])
+                return [ctx.bus.get_or_run(
+                    "paired_view", "1.0",
+                    lambda: R.paired_view(ctx.video, self.out_dir, bbox=b, t=int(t)),
+                    bbox=[round(v, 3) for v in b], t=int(t))]
+        return []
+
     def actions(self, ctx: SkillContext) -> list[Action]:
         batches = self._plan.get("batches") or []
 
