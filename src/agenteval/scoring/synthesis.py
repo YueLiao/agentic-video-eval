@@ -315,13 +315,7 @@ def synthesize(verdicts: Iterable[SkillVerdict], *, total_frames: int,
                         measurements=measurements or {}, examined=examined)
     judged = [a for a in asp.values() if a.judgeable and a.score is not None]
     if judged:
-        # Weight by judgeability: a "low" aspect still reports, but must not
-        # move the headline as much as one we can actually measure.
-        w_by = {"high": 1.0, "medium": 0.7, "low": 0.4}
-        ws = [w_by.get(a.judgeability, 0.7) for a in judged]
-        mean_a = sum(a.score * w for a, w in zip(judged, ws)) / sum(ws)
-        worst_a = min(a.score for a in judged)
-        overall = (1 - alpha) * mean_a + alpha * min(mean_a, worst_a)
+        overall = overall_from_aspects(judged, alpha=alpha)
     # A clean-looking report from a broken pipeline is the worst output this
     # system can produce, so the conditions that make one are stated loudly.
     warnings: list[str] = []
@@ -448,6 +442,42 @@ def score_aspects(verdicts: Sequence[SkillVerdict], *, total_frames: int,
             worst_severity=worst, actionable=a.actionable if live else "",
             findings=[f.to_json() for f in fs])
     return out
+
+
+#: How many of the worst aspects the headline is built from. A clip is judged
+#: by what is wrong with it, not by the count of things that happen to be fine.
+DEFECT_FOCUS_K = 5
+
+
+def overall_from_aspects(judged: Sequence[AspectScore], *, alpha: float = 0.5,
+                         k: int = DEFECT_FOCUS_K) -> float:
+    """Headline score, built from the worst aspects rather than all of them.
+
+    Averaging every judged aspect compresses everything into the top of the
+    scale and destroys the differences that matter. Measured on three clips:
+    83-92% of aspects scored a clean 10, which anchored the mean at 9.4-9.7, so
+    a model with twice as many defects as another (four versus two) finished
+    0.16 below it. Adding aspects made this worse, not better -- each clean one
+    is another vote for "fine".
+
+    The `min(mean, worst)` term was inert for the same reason: with the scale
+    collapsed, all three clips had an identical worst aspect of 6.50, so the
+    term contributed the same value to each and separated nothing.
+
+    So the headline is the mean of the *k worst* judged aspects, blended toward
+    the single worst. Clean aspects still matter -- they are what a video needs
+    to have in order for its worst to be its only problem -- but they no longer
+    outvote the defects by sheer count.
+    """
+    if not judged:
+        return 0.0
+    w_by = {"high": 1.0, "medium": 0.7, "low": 0.4}
+    ranked = sorted(judged, key=lambda a: a.score or 10.0)
+    focus = ranked[:max(1, min(k, len(ranked)))]
+    ws = [w_by.get(a.judgeability, 0.7) for a in focus]
+    mean_focus = sum((a.score or 10.0) * w for a, w in zip(focus, ws)) / sum(ws)
+    worst = ranked[0].score or 10.0
+    return (1 - alpha) * mean_focus + alpha * worst
 
 
 def group_rollup(aspects: dict[str, AspectScore]) -> dict[str, float | None]:
