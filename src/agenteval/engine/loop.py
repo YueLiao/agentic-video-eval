@@ -32,6 +32,7 @@ from agenteval.engine.actions import (CONCLUDE, DECISION_SCHEMA, Action,
                                       decision_instructions)
 from agenteval.engine.evidence import Evidence
 from agenteval.llm.client import ImageRef, VLMClient
+from agenteval.engine.requirements import assess, cap_confidence, render_gaps
 from agenteval.rubrics.taxonomy import normalize_grade
 from agenteval.skills.base import (JUDGE_RULES, VERDICT_SCHEMA, Finding,
                                    Presentation, Skill, SkillContext,
@@ -218,6 +219,10 @@ def _images_for(evidence: Sequence[Evidence], cap: int = 12,
     return out
 
 
+def rnd_budget_left(steps: Sequence[Step], b: LoopBudget) -> bool:
+    return len(steps) <= b.max_rounds
+
+
 def run_skill(skill: Skill, ctx: SkillContext, vlm: VLMClient,
               budget: LoopBudget | None = None) -> tuple[SkillVerdict, list[Step]]:
     b = budget or LoopBudget(max_rounds=skill.max_rounds)
@@ -284,18 +289,26 @@ def run_skill(skill: Skill, ctx: SkillContext, vlm: VLMClient,
             break                      # repeating itself: stop paying for it
 
     # ---- verdict ---------------------------------------------------------
-    # Top up with the views the grading chain needs but the search had no
-    # reason to fetch.
-    try:
-        extra_ev = skill.verdict_evidence(ctx, evidence)
-    except Exception:  # noqa: BLE001 - a missing view must not lose the verdict
-        extra_ev = []
-    for e in extra_ev:
-        if e.eid not in {x.eid for x in evidence}:
-            evidence.append(e)
-            tool_calls += 1
+    # What the gathered evidence can actually support. Reported to the model
+    # rather than silently patched: it is better placed than a fixed rule to
+    # decide whether a gap is worth another probe or whether the honest answer
+    # is a low-confidence grade.
+    cov = assess([e.tool for e in evidence])
+    if not cov.complete and vlm_calls < b.max_vlm_calls and rnd_budget_left(
+            steps, b) and skill.autofill_gaps:
+        # One chance to close the gaps itself, choosing how.
+        try:
+            extra_ev = skill.verdict_evidence(ctx, evidence, missing=set(cov.missing))
+        except Exception:  # noqa: BLE001 - a missing view must not lose the verdict
+            extra_ev = []
+        for e in extra_ev:
+            if e.eid not in {x.eid for x in evidence}:
+                evidence.append(e)
+                tool_calls += 1
+        cov = assess([e.tool for e in evidence])
 
     user = (skill.render_state(ctx, evidence, history)
+            + "\n\n" + render_gaps(cov)
             + "\n\n## 现在给出结论\n"
             + "列出你确认的问题(findings)。每条必须带 evidence id、"
               "以及尽可能精确的 t_span(帧区间)和 bbox(归一化 x,y,w,h)。\n"
@@ -325,16 +338,20 @@ def run_skill(skill: Skill, ctx: SkillContext, vlm: VLMClient,
 
     payload = vres.parsed or {}
     verdict.summary = str(payload.get("summary", ""))[:1000]
+    missing_axes = list(cov.missing)
     for f in payload.get("findings", []) or []:
         try:
+            conf, sev = cap_confidence(
+                missing_axes, parse_confidence(f.get("confidence")),
+                normalize_grade(f.get("severity")))
             verdict.findings.append(Finding(
                 kind=str(f.get("kind", "unknown")),
-                severity=str(f.get("severity", "minor")),
+                severity=sev,
                 extent=str(f.get("extent", "brief")),
                 salience=str(f.get("salience", "secondary")),
                 t_span=tuple(f["t_span"][:2]) if f.get("t_span") else None,
                 bbox=tuple(f["bbox"][:4]) if f.get("bbox") else None,
-                confidence=parse_confidence(f.get("confidence")),
+                confidence=conf,
                 rationale=str(f.get("rationale", ""))[:800],
                 evidence=[str(x) for x in (f.get("evidence") or [])],
                 aspect=(str(f["aspect"]) if f.get("aspect") else None),

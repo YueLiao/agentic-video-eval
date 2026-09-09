@@ -195,8 +195,12 @@ class Skill(ABC):
         belong here: they cost nothing and they aim the first question."""
         return []
 
-    def verdict_evidence(self, ctx: SkillContext,
-                         evidence: Sequence[Evidence]) -> list[Evidence]:
+    #: Whether the skill may fetch views to close evidence gaps before grading.
+    #: Off for skills whose judgement is not about a localized defect.
+    autofill_gaps: bool = True
+
+    def verdict_evidence(self, ctx: SkillContext, evidence: Sequence[Evidence],
+                         *, missing: set[str] | None = None) -> list[Evidence]:
         """Views the graded verdict needs, beyond whatever the search gathered.
 
         The search returns magnified crops, because that is what finding a
@@ -206,7 +210,10 @@ class Skill(ABC):
         answer three of the four questions it is asked, and defaults instead --
         which is how 85% of findings landed in one grade.
 
-        Skills that grade localized defects override this to supply the pair.
+        ``missing`` names the axes still unbacked, so a skill fetches only what
+        is actually absent rather than a fixed bundle every time -- a defect
+        that never moves needs no whole-clip view, and one already obvious in
+        the full frame needs no magnification ladder.
         """
         return []
 

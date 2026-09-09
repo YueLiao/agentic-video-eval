@@ -115,15 +115,19 @@ class HumanIntegrity(Skill):
                     best, best_i = b, p["idx"]
         return (tuple(best), best_i) if best else (None, None)
 
-    def verdict_evidence(self, ctx: SkillContext, evidence) -> list[Evidence]:
-        """Supply the full-frame and whole-clip views the grading chain needs.
+    def verdict_evidence(self, ctx: SkillContext, evidence,
+                         *, missing: set[str] | None = None) -> list[Evidence]:
+        """Close only the gaps that are actually open.
 
-        Everything this skill gathers while searching is magnified, because that
-        is what makes a finger defect visible at all. But the severity boundary
-        is written against normal viewing scale and salience against the whole
-        composition, so grading from crops alone leaves three of the four
-        questions unanswerable.
+        Fetching a fixed bundle every time ignores the input: a defect already
+        obvious in the full frame needs no magnification ladder, and one the
+        search already covered across the clip needs no whole-clip view. So this
+        maps each unbacked axis to the cheapest view that closes it, and fetches
+        nothing when nothing is missing.
         """
+        need = missing if missing is not None else {"severity", "extent", "salience"}
+        if not need:
+            return []
         bb, at = self._hand_bbox()
         if bb is None:
             bb, at = self._face_bbox()
@@ -131,18 +135,23 @@ class HumanIntegrity(Skill):
             return []
         t = int(at or ctx.video.total // 2)
         out: list[Evidence] = []
-        out.append(ctx.bus.get_or_run(
-            "paired_view", "1.0",
-            lambda: R.paired_view(ctx.video, self.out_dir, bbox=bb, t=t),
-            bbox=[round(v, 3) for v in bb], t=t))
-        out.append(ctx.bus.get_or_run(
-            "scale_ladder", "1.0",
-            lambda: R.scale_ladder(ctx.video, self.out_dir, bbox=bb, t=t),
-            bbox=[round(v, 3) for v in bb], t=t))
-        out.append(ctx.bus.get_or_run(
-            "temporal_extent", "1.0",
-            lambda: R.temporal_extent(ctx.video, self.out_dir, bbox=bb),
-            bbox=[round(v, 3) for v in bb]))
+        # paired_view answers severity and salience together, so prefer it when
+        # both are open rather than paying for two views.
+        if {"severity", "salience"} & need:
+            out.append(ctx.bus.get_or_run(
+                "paired_view", "1.0",
+                lambda: R.paired_view(ctx.video, self.out_dir, bbox=bb, t=t),
+                bbox=[round(v, 3) for v in bb], t=t))
+        if "extent" in need:
+            out.append(ctx.bus.get_or_run(
+                "temporal_extent", "1.0",
+                lambda: R.temporal_extent(ctx.video, self.out_dir, bbox=bb),
+                bbox=[round(v, 3) for v in bb]))
+        if "existence" in need:
+            out.append(ctx.bus.get_or_run(
+                "scale_ladder", "1.0",
+                lambda: R.scale_ladder(ctx.video, self.out_dir, bbox=bb, t=t),
+                bbox=[round(v, 3) for v in bb], t=t))
         return out
 
     def _hand_bbox(self):
@@ -207,7 +216,33 @@ class HumanIntegrity(Skill):
                 lambda: R.highfreq_amplify(ctx.video, self.out_dir, t=int(t), bbox=bb),
                 t=int(t), bbox=[round(v, 3) for v in bb] if bb else None)
 
+        def gather(view: str, t: int | None = None) -> Evidence:
+            bb, at = self._hand_bbox()
+            if bb is None:
+                bb, at = self._face_bbox()
+            if bb is None:
+                raise ValueError("尚未定位到人脸或手部,无法取该视图")
+            tt = int(t) if t is not None else int(at or ctx.video.total // 2)
+            v = str(view).strip()
+            if v == "paired_view":
+                fn = lambda: R.paired_view(ctx.video, self.out_dir, bbox=bb, t=tt)
+            elif v == "scale_ladder":
+                fn = lambda: R.scale_ladder(ctx.video, self.out_dir, bbox=bb, t=tt)
+            elif v == "temporal_extent":
+                fn = lambda: R.temporal_extent(ctx.video, self.out_dir, bbox=bb)
+            else:
+                raise ValueError("view 必须是 paired_view / scale_ladder / temporal_extent")
+            return ctx.bus.get_or_run(v, "1.0", fn,
+                                      bbox=[round(x, 3) for x in bb], t=tt)
+
         return [
+            Action("gather",
+                   "按需补取判分所需的视图,自己决定取哪个:"
+                   "`paired_view` 全图原尺寸+放大并排(判严重度和显著位置);"
+                   "`scale_ladder` 同一处 1x/2x/4x(判严重度分档);"
+                   "`temporal_extent` 该区域在全片上的采样(判持续范围)",
+                   {"view": "str: paired_view | scale_ladder | temporal_extent",
+                    "t": "int: 可选帧号"}, run=gather),
             Action("zoom_face", "把最大的人脸按原生分辨率裁剪放大,按时间排开细看",
                    {"t0": "int: 可选,起始帧", "t1": "int: 可选,结束帧"},
                    run=zoom_face),
