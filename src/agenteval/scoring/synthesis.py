@@ -29,7 +29,8 @@ from typing import Any, Iterable, Sequence
 from agenteval.rubrics.taxonomy import (EXTENT, GRADE_SCORE, SALIENCE,
                                         normalize_extent, normalize_grade,
                                         normalize_salience)
-from agenteval.scoring.aspects import (ASPECTS, BY_GROUP, DEFECT_TO_ASPECT,
+from agenteval.scoring.aspects import (ASPECTS, BY_GROUP, COMPOSITE_LABEL_ZH,
+                                       COMPOSITE_VIEWS, DEFECT_TO_ASPECT,
                                        GROUP_LABEL_ZH, NOT_SCORED, Aspect)
 from agenteval.skills.base import Finding, SkillVerdict
 
@@ -102,6 +103,7 @@ class VideoScore:
     dimensions: dict[str, DimensionScore]        # per skill, the working detail
     aspects: dict[str, "AspectScore"] = field(default_factory=dict)
     groups: dict[str, float | None] = field(default_factory=dict)
+    composites: dict[str, float | None] = field(default_factory=dict)
     not_scored: dict[str, str] = field(default_factory=lambda: dict(NOT_SCORED))
     n_findings: int = 0
     n_retracted: int = 0
@@ -119,6 +121,8 @@ class VideoScore:
             "aspects": {k: v.to_json() for k, v in self.aspects.items()},
             "groups": {k: (None if v is None else round(v, 2))
                        for k, v in self.groups.items()},
+            "composites": {k: (None if v is None else round(v, 2))
+                           for k, v in self.composites.items()},
             "not_scored": self.not_scored,
             "skill_detail": {k: v.to_json() for k, v in self.dimensions.items()},
             "n_findings": self.n_findings, "n_retracted": self.n_retracted,
@@ -148,6 +152,12 @@ class VideoScore:
                         if a.actionable:
                             note += f"  → {a.actionable}"
                     rows.append(f"    {a.label:10s} {a.score:6.2f}   {note}")
+        if any(v is not None for v in self.composites.values()):
+            rows.append("\n  跨组复合视图(用于与人评轴对齐)")
+            for k, v in self.composites.items():
+                lab = COMPOSITE_LABEL_ZH.get(k, k)
+                rows.append(f"    {lab:10s} " +
+                            ("  n/a" if v is None else f"{v:6.2f}"))
         rows.append(f"\n  {'总分':10s} {self.overall:6.2f}"
                     f"   (仅计入可判项)")
         for w in self.warnings:
@@ -331,8 +341,10 @@ def synthesize(verdicts: Iterable[SkillVerdict], *, total_frames: int,
     if n_judgeable and total_f == 0 and raised == 0:
         warnings.append("没有任何 skill 提出过 finding:请确认判官确实在检查,"
                         "而不是每轮都直接 conclude")
-    return VideoScore(overall, dims, asp, group_rollup(asp), dict(NOT_SCORED),
-                      total_f, total_r, rate, caps, warnings)
+    vs = VideoScore(overall, dims, asp, group_rollup(asp), dict(NOT_SCORED),
+                    total_f, total_r, rate, caps, warnings)
+    vs.composites = composite_views(asp)
+    return vs
 
 
 @dataclass
@@ -478,6 +490,26 @@ def overall_from_aspects(judged: Sequence[AspectScore], *, alpha: float = 0.5,
     mean_focus = sum((a.score or 10.0) * w for a, w in zip(focus, ws)) / sum(ws)
     worst = ranked[0].score or 10.0
     return (1 - alpha) * mean_focus + alpha * worst
+
+
+def composite_views(aspects: dict[str, AspectScore]) -> dict[str, float | None]:
+    """Cross-cutting composites, for comparing against human evaluation axes.
+
+    Built from the *worst* contributing aspect rather than the mean, for the
+    same reason the headline is: averaging lets a clean sub-aspect mask a broken
+    one, and a human rating "运动合理性" is reacting to whatever went wrong, not
+    to the average of things that went right.
+
+    `None` when nothing feeding it could be judged, so a composite never
+    silently reports a number built from one aspect out of five.
+    """
+    out: dict[str, float | None] = {}
+    for name, keys in COMPOSITE_VIEWS.items():
+        vals = [aspects[k].score for k in keys
+                if k in aspects and aspects[k].judgeable
+                and aspects[k].score is not None]
+        out[name] = min(vals) if vals else None
+    return out
 
 
 def group_rollup(aspects: dict[str, AspectScore]) -> dict[str, float | None]:

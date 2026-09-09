@@ -240,6 +240,36 @@ DEFECT_TO_ASPECT: dict[str, str] = {
     d: a.key for a in ASPECTS for d in a.defects
 }
 
+#: Aggregate views that cut across groups, for comparing against human
+#: evaluation axes that were not defined on this taxonomy.
+#:
+#: 运动合理性 as the annotation protocol uses it is not the same cut as either
+#: the motion group or the physics group here: it asks whether the movement is
+#: *believable*, which spans how it flows (smoothness, naturalness) and whether
+#: it obeys the world (gravity, rigidity). Reporting only the finer aspects
+#: makes correlation against that human axis impossible; reporting only the
+#: composite loses the diagnosis. So both are produced, and the composite is
+#: explicitly a view over aspects rather than a separate measurement.
+COMPOSITE_VIEWS: dict[str, tuple[str, ...]] = {
+    "motion_plausibility": ("motion_magnitude", "motion_smoothness",
+                            "motion_naturalness", "gravity", "rigidity"),
+    "human_quality": ("hand_structure", "face_structure", "limb_structure",
+                      "identity_consistency", "skin_texture"),
+    "temporal_stability": ("flicker", "texture_stability", "frame_continuity",
+                           "object_permanence"),
+    "instruction_following": ("entity_presence", "attribute_binding",
+                              "object_count", "spatial_relation",
+                              "action_execution", "action_order",
+                              "camera_control", "style_match"),
+}
+
+COMPOSITE_LABEL_ZH: dict[str, str] = {
+    "motion_plausibility": "运动合理性",
+    "human_quality": "人物质量",
+    "temporal_stability": "时间稳定性",
+    "instruction_following": "指令遵循",
+}
+
 GROUP_LABEL_ZH: dict[str, str] = {
     "human": "人物保真", "temporal": "时间稳定", "motion": "运动",
     "physics": "物理", "frame_quality": "单帧画质",
