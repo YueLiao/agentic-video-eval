@@ -73,6 +73,9 @@ def main() -> int:
     ap.add_argument("--perturb", default=None,
                     choices=["frame_phase", "locus_order", "skill_order"])
     ap.add_argument("--perturb-seed", type=int, default=0)
+    ap.add_argument("--phases", type=int, default=1,
+                    help="sampling phases to run and require consensus across; "
+                         "1 disables consensus")
     args = ap.parse_args()
 
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
@@ -124,9 +127,15 @@ def main() -> int:
                        budget=LoopBudget(max_rounds=args.max_rounds,
                                          max_vlm_calls=10, max_tool_calls=24,
                                          max_wall_s=600),
-                       do_falsify=not args.no_falsify)
+                       do_falsify=not args.no_falsify,
+                       phases=tuple(round(k / args.phases, 3)
+                                    for k in range(args.phases)))
         results.append((name, res))
         print(f"  {time.time()-t:.0f}s  vlm={res.vlm_calls} tools={res.tool_calls}")
+        if res.consensus:
+            c = res.consensus
+            print(f"  共识: {c['n_clusters']} 簇 → 丢弃 {c['n_dropped']} "
+                  f"(丢弃率 {c['discard_rate']:.0%}, {len(c['phases'])} 个相位)")
         print(res.score.table())
 
     if len(results) > 1:

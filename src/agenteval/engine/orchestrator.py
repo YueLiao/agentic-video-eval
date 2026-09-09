@@ -25,6 +25,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Sequence
 
+from agenteval.consensus.vote import consensus
 from agenteval.engine.evidence import EvidenceBus
 from agenteval.engine.loop import LoopBudget, Step, falsify, run_skill
 from agenteval.llm.client import VLMClient
@@ -47,6 +48,7 @@ class EvalResult:
     routing: dict[str, Any] = field(default_factory=dict)
     steps: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
     prompt_manifests: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
+    consensus: dict[str, Any] = field(default_factory=dict)
     bus: dict[str, Any] = field(default_factory=dict)
     elapsed_s: float = 0.0
     vlm_calls: int = 0
@@ -58,6 +60,7 @@ class EvalResult:
             "score": self.score.to_json(),
             "verdicts": [v.to_json() for v in self.verdicts],
             "routing": self.routing, "steps": self.steps,
+            "consensus": self.consensus,
             "prompt_manifests": self.prompt_manifests, "bus": self.bus,
             "elapsed_s": round(self.elapsed_s, 2),
             "vlm_calls": self.vlm_calls, "tool_calls": self.tool_calls,
@@ -94,7 +97,35 @@ def evaluate(video_path: str | Path, condition: dict[str, Any],
              *, out_dir: str | Path, budget: LoopBudget | None = None,
              do_falsify: bool = True,
              decision: RouteDecision | None = None,
-             graph: "RequirementGraph | None" = None) -> EvalResult:
+             graph: "RequirementGraph | None" = None,
+             phases: Sequence[float] = (0.0,),
+             consensus_fraction: float = 0.5) -> EvalResult:
+    """Evaluate one clip, optionally across several sampling phases.
+
+    With more than one phase the whole skill pass is repeated with uniform
+    sampling shifted, and only findings that recur across a majority of phases
+    are kept. That is not redundancy: measured on three phases of the same clips,
+    shifting which frames get sampled changed every aspect carrying signal, with
+    noise exceeding between-model signal on all of them, and the overall ranking
+    took three different orders in three runs. A defect that appears at one phase
+    and not the others was a property of the sampling, not of the video.
+    """
+    if len(phases) > 1:
+        return _evaluate_multiphase(
+            video_path, condition, skills, vlm, out_dir=out_dir, budget=budget,
+            do_falsify=do_falsify, decision=decision, graph=graph,
+            phases=phases, consensus_fraction=consensus_fraction)
+    return _evaluate_once(video_path, condition, skills, vlm, out_dir=out_dir,
+                          budget=budget, do_falsify=do_falsify,
+                          decision=decision, graph=graph)
+
+
+def _evaluate_once(video_path: str | Path, condition: dict[str, Any],
+                   skills: dict[str, Callable[[], Skill]], vlm: VLMClient,
+                   *, out_dir: str | Path, budget: LoopBudget | None = None,
+                   do_falsify: bool = True,
+                   decision: RouteDecision | None = None,
+                   graph: "RequirementGraph | None" = None) -> EvalResult:
     t0 = time.perf_counter()
     video = VideoHandle(video_path)
     out = Path(out_dir); out.mkdir(parents=True, exist_ok=True)
@@ -155,6 +186,89 @@ def evaluate(video_path: str | Path, condition: dict[str, Any],
         vlm_calls=sum(v.vlm_calls for v in verdicts),
         tool_calls=bus.calls,
     )
+    (out / "result.json").write_text(
+        json.dumps(res.to_json(), ensure_ascii=False, indent=1), encoding="utf-8")
+    return res
+
+
+def _evaluate_multiphase(video_path, condition, skills, vlm, *, out_dir,
+                         budget, do_falsify, decision, graph,
+                         phases: Sequence[float],
+                         consensus_fraction: float) -> EvalResult:
+    """Run every phase, then keep only findings that recur across them.
+
+    Cost is evidence collection, not judgement quality: each phase is a full
+    pass, so this multiplies VLM calls by the number of phases. Worth it because
+    the alternative measured worse than noise -- more clips cannot fix a score
+    that changes when you shift the sampling by three frames.
+    """
+    from agenteval.media.clip import set_sample_phase
+    from agenteval.scoring.synthesis import collect_measurements, synthesize
+    from agenteval.skills.base import SkillVerdict
+
+    out = Path(out_dir)
+    per_phase: list[EvalResult] = []
+    try:
+        for i, ph in enumerate(phases):
+            set_sample_phase(ph)
+            per_phase.append(_evaluate_once(
+                video_path, condition, skills, vlm, out_dir=out / f"phase{i}",
+                budget=budget, do_falsify=do_falsify, decision=decision,
+                graph=graph))
+    finally:
+        set_sample_phase(0.0)
+
+    base = per_phase[0]
+    by_skill: dict[str, list[list]] = {}
+    for r in per_phase:
+        seen = {v.skill for v in r.verdicts}
+        for v in r.verdicts:
+            by_skill.setdefault(v.skill, []).append(
+                [f for f in v.findings if f.counts])
+        for name in by_skill:
+            if name not in seen:            # skill did not run this phase
+                by_skill[name].append([])
+
+    merged: list[SkillVerdict] = []
+    report: dict[str, Any] = {"phases": list(phases), "per_skill": {}}
+    for name, phase_findings in by_skill.items():
+        kept, rep = consensus(phase_findings, min_fraction=consensus_fraction)
+        report["per_skill"][name] = rep
+        src = next((v for r in per_phase for v in r.verdicts if v.skill == name), None)
+        mv = SkillVerdict(skill=name, findings=kept,
+                          summary=(src.summary if src else ""),
+                          rounds=sum(v.rounds for r in per_phase
+                                     for v in r.verdicts if v.skill == name),
+                          vlm_calls=sum(v.vlm_calls for r in per_phase
+                                        for v in r.verdicts if v.skill == name),
+                          tool_calls=sum(v.tool_calls for r in per_phase
+                                         for v in r.verdicts if v.skill == name))
+        merged.append(mv)
+
+    tot = sum(r["n_clusters"] for r in report["per_skill"].values())
+    dropped = sum(r["n_dropped"] for r in report["per_skill"].values())
+    report["n_clusters"] = tot
+    report["n_dropped"] = dropped
+    report["discard_rate"] = round(dropped / max(1, tot), 3)
+
+    video = VideoHandle(video_path)
+    meas = collect_measurements(base.bus, base.routing)
+    covers = {name: tuple(skills[name]().covers) for name in base.routing["skills"]
+              if name in skills}
+    score = synthesize(merged, total_frames=video.total,
+                       disabled=base.routing.get("disabled") or {},
+                       measurements=meas, skill_covers=covers)
+    res = EvalResult(
+        video=str(video.path), condition=condition, score=score,
+        verdicts=merged, routing=base.routing,
+        steps={f"phase{i}": r.steps for i, r in enumerate(per_phase)},  # type: ignore[misc]
+        prompt_manifests=base.prompt_manifests, bus=base.bus,
+        consensus=report,
+        elapsed_s=sum(r.elapsed_s for r in per_phase),
+        vlm_calls=sum(r.vlm_calls for r in per_phase),
+        tool_calls=sum(r.tool_calls for r in per_phase),
+    )
+    out.mkdir(parents=True, exist_ok=True)
     (out / "result.json").write_text(
         json.dumps(res.to_json(), ensure_ascii=False, indent=1), encoding="utf-8")
     return res
