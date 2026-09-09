@@ -1,0 +1,416 @@
+<title>视频评测框架设计</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --paper:#FBFAF8; --surface:#FFFFFF; --sunk:#F3F1ED;
+  --ink:#1A1D21; --ink-2:#42484F; --ink-3:#6B747E;
+  --rule:#E2DFD9; --rule-2:#CFCBC3;
+  --amber:#B8650A; --amber-soft:#FDF2E2;
+  --good:#2F6B4F; --good-soft:#E8F2EC;
+  --warn:#8A5A00; --warn-soft:#FBF0DA;
+  --bad:#9B3226; --bad-soft:#FAEAE7;
+}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#15181B; --surface:#1C2024; --sunk:#22272B;
+    --ink:#ECEAE6; --ink-2:#BFC5CB; --ink-3:#8D959D;
+    --rule:#2E343A; --rule-2:#404850;
+    --amber:#E8A44C; --amber-soft:#2C2317;
+    --good:#7FC59D; --good-soft:#1B2A22;
+    --warn:#DCA83F; --warn-soft:#2A2417;
+    --bad:#E08878; --bad-soft:#2C1E1B;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#15181B; --surface:#1C2024; --sunk:#22272B;
+  --ink:#ECEAE6; --ink-2:#BFC5CB; --ink-3:#8D959D;
+  --rule:#2E343A; --rule-2:#404850;
+  --amber:#E8A44C; --amber-soft:#2C2317;
+  --good:#7FC59D; --good-soft:#1B2A22;
+  --warn:#DCA83F; --warn-soft:#2A2417;
+  --bad:#E08878; --bad-soft:#2C1E1B;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:"IBM Plex Sans","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.72; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px; margin:0 auto; padding:0 28px 96px}
+.col{max-width:68ch}
+h1,h2,h3{text-wrap:balance; line-height:1.25; margin:0}
+h1{font-size:clamp(28px,4.2vw,42px); font-weight:700; letter-spacing:-.02em}
+h2{font-size:23px; font-weight:600; letter-spacing:-.01em}
+h3{font-size:17px; font-weight:600}
+p{margin:0}
+code,.mono{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+code{font-size:.87em; background:var(--sunk); padding:.1em .38em; border-radius:3px; color:var(--ink-2)}
+a{color:var(--amber)}
+
+header{padding:64px 0 40px; border-bottom:1px solid var(--rule)}
+.eyebrow{font-family:"IBM Plex Mono",monospace; font-size:11.5px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--ink-3); margin-bottom:18px}
+.lede{margin-top:20px; font-size:19px; line-height:1.62; color:var(--ink-2); max-width:62ch}
+
+section{padding:52px 0; border-bottom:1px solid var(--rule); display:flex; flex-direction:column; gap:22px}
+section:last-of-type{border-bottom:0}
+.sec-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap}
+.sec-num{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--amber); font-weight:600}
+
+.stack{display:flex; flex-direction:column; gap:14px}
+.grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:18px}
+.grid3{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px}
+
+.chip{display:inline-flex; align-items:center; gap:6px; font-family:"IBM Plex Mono",monospace;
+  font-size:11px; letter-spacing:.04em; padding:3px 9px; border-radius:100px; white-space:nowrap;
+  font-weight:500}
+.chip.ok{background:var(--good-soft); color:var(--good)}
+.chip.un{background:var(--warn-soft); color:var(--warn)}
+.chip.no{background:var(--bad-soft); color:var(--bad)}
+.chip::before{content:""; width:5px; height:5px; border-radius:50%; background:currentColor}
+
+.limit{border-left:2px solid var(--rule-2); padding:2px 0 2px 18px; display:flex; flex-direction:column; gap:7px}
+.limit strong{font-weight:600}
+.limit .fix{font-size:14.5px; color:var(--ink-3)}
+.limit .fix b{color:var(--amber); font-weight:600}
+
+.stage{display:grid; grid-template-columns:34px 1fr; gap:16px; align-items:start}
+.stage .n{font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600; color:var(--amber);
+  border:1px solid var(--rule-2); border-radius:4px; text-align:center; padding:3px 0; margin-top:3px}
+.stage h3{margin-bottom:5px}
+.stage p{font-size:15px; color:var(--ink-2)}
+
+table{border-collapse:collapse; width:100%; font-size:14.5px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
+th,td{text-align:left; padding:9px 14px 9px 0; border-bottom:1px solid var(--rule); vertical-align:top}
+th{font-size:11.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3); font-weight:600;
+  border-bottom:1px solid var(--rule-2); white-space:nowrap}
+td.num,th.num{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; white-space:nowrap}
+
+.ladder{display:flex; flex-direction:column; gap:0; border:1px solid var(--rule); border-radius:6px; overflow:hidden}
+.rung{display:grid; grid-template-columns:74px 52px 1fr; align-items:center; gap:14px;
+  padding:11px 16px; border-bottom:1px solid var(--rule); font-size:14.5px}
+.rung:last-child{border-bottom:0}
+.rung .g{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:13px}
+.rung .s{font-family:"IBM Plex Mono",monospace; font-size:19px; font-weight:600; text-align:right}
+.rung .d{color:var(--ink-2)}
+.rung[data-g="severe"] .s,.rung[data-g="severe"] .g{color:var(--bad)}
+.rung[data-g="major"] .s,.rung[data-g="major"] .g{color:var(--warn)}
+.rung[data-g="clean"] .s,.rung[data-g="clean"] .g{color:var(--good)}
+
+.note{background:var(--sunk); border-radius:6px; padding:16px 18px; font-size:14.5px;
+  color:var(--ink-2); display:flex; flex-direction:column; gap:8px}
+.note b{color:var(--ink); font-weight:600}
+.note.flag{background:var(--amber-soft); border-left:2px solid var(--amber)}
+
+.axes{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:0;
+  border:1px solid var(--rule); border-radius:6px; overflow:hidden}
+.axis{padding:16px 18px; border-right:1px solid var(--rule); display:flex; flex-direction:column; gap:6px}
+.axis:last-child{border-right:0}
+.axis .t{font-weight:600; font-size:15px}
+.axis .v{font-family:"IBM Plex Mono",monospace; font-size:12.5px; color:var(--amber); line-height:1.7}
+.axis .w{font-size:13.5px; color:var(--ink-3)}
+
+.opt{border:1px solid var(--rule); border-radius:6px; padding:18px 20px; display:flex;
+  flex-direction:column; gap:9px; background:var(--surface)}
+.opt h3{font-size:16px}
+.opt .why{font-size:14.5px; color:var(--ink-2)}
+.opt .cost{font-family:"IBM Plex Mono",monospace; font-size:12.5px; color:var(--ink-3)}
+
+footer{padding:40px 0 0; font-size:13.5px; color:var(--ink-3)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Agentic Video Eval · 设计说明 · 2026-09-09</div>
+  <h1>把视频评测当成搜索，而不是打分</h1>
+  <p class="lede">
+    这份文档说明当前框架为什么这么设计、每个决定背后的证据是什么，
+    以及哪些结论已经被数据支持、哪些还只是假设。
+    末尾是需要你定夺的下一步。
+  </p>
+</header>
+
+<section>
+  <div class="sec-head"><span class="sec-num">01</span><h2>问题出在哪</h2></div>
+  <div class="col stack">
+    <p>常规做法是：均匀抽 8 帧，配一段固定 prompt，让 VLM 给个 1–5 分。
+    这条路的瓶颈不是「prompt 写得不够好」，而是三个物理限制——每一个都无法靠改写 prompt 绕过。</p>
+  </div>
+  <div class="grid3">
+    <div class="limit">
+      <strong>采样</strong>
+      <p>120 帧里取 8 帧是 6.7% 的盲采样。生成缺陷是<b>瞬态</b>的，集中在运动峰值和转场处。采样没覆盖到的缺陷，写什么 prompt 都不可能被扣分。</p>
+      <p class="fix">解法：<b>自适应搜索</b></p>
+    </div>
+    <div class="limit">
+      <strong>分辨率</strong>
+      <p>占画面 6% 的人脸，在 VLM 的图像预算里被压到约 30px。判断所需的信息<b>物理上不在模型输入里</b>——它不是没注意到，是被要求判断一份不存在的证据。</p>
+      <p class="fix">解法：<b>原生分辨率裁剪</b></p>
+    </div>
+    <div class="limit">
+      <strong>先验</strong>
+      <p>VLM 预训练几乎全是自然、无瑕疵视频。它对「六指手」「骨长随时间变化」「纹理爬行」缺乏先验——不知道该找什么。</p>
+      <p class="fix">解法：<b>外部检测器与几何不变量</b></p>
+    </div>
+  </div>
+  <div class="col note flag">
+    <p><b>这就是「agentic」的意义所在。</b>三种解法各有代价，用哪个、用多深，取决于输入：
+    静物镜头和舞蹈特写不该走同一条路径、花同样的钱。固定 pipeline 表达不了这件事。</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">02</span><h2>一个重要的拆分</h2></div>
+  <div class="col stack">
+    <p>评测一段生成视频其实是<b>两个不同的任务</b>，需要完全不同的机器。把它们压成一个 Likert 分数，
+    正是现有 benchmark 在头部模型上饱和的原因：合规基本都满分了，自洽的缺陷又因为看不见而没被扣分。</p>
+  </div>
+  <div class="scroll"><table>
+    <thead><tr><th>&nbsp;</th><th>合规 Conformance</th><th>自洽 Integrity</th></tr></thead>
+    <tbody>
+      <tr><td>问什么</td><td>视频有没有做条件要求的事？</td><td>不管条件是什么，它做出来的东西立不立得住？</td></tr>
+      <tr><td>性质</td><td>对结构化目标的<b>核对</b></td><td>在 (x, y, t) 里<b>搜索缺陷</b></td></tr>
+      <tr><td>失败样式</td><td>少了主体、动作顺序反了、运镜不对</td><td>六根手指、肢体在变长、纹理沸腾、时间跳变</td></tr>
+      <tr><td>代价</td><td>可预测、可并行</td><td>不可预测、必须自适应</td></tr>
+    </tbody>
+  </table></div>
+  <div class="col note">
+    <p><b>缺陷还要再按「需要多少上下文」分一次。</b>22 类缺陷里恰好 11 类<b>单帧可判定</b>
+    （手部畸形、穿模、结构崩坏、文字错乱），11 类<b>需要序列</b>（闪烁、卡顿、身份漂移、动作不自然）。</p>
+    <p>这两半要用完全不同的索引：单帧缺陷的最佳检测器<b>就是 VLM 自己扫帧</b>——没有 CV 信号能识别
+    「这把椅子几何不成立」，而运动补偿残差对一个稳定存在的缺陷完全失明。</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">03</span><h2>系统怎么跑</h2></div>
+  <div class="stack" style="gap:26px">
+    <div class="stage"><div class="n">A</div><div>
+      <h3>条件编译（离线，每个 prompt 一次）</h3>
+      <p>把 prompt 拆成可逐条核对的要求清单。<b>只看输入、不看任何候选视频</b>，编译一次冻结复用——
+      这既保证跨模型公平，也是反 gaming 的关键：policy 无法回避一条它没得选的要求。</p>
+    </div></div>
+    <div class="stage"><div class="n">B</div><div>
+      <h3>可疑度映射（在线，纯信号，无 VLM）</h3>
+      <p>用信号处理在<b>全部帧</b>上算出一份排序好的「待查清单」。主力信号是<b>运动补偿残差</b>：
+      用光流把第 t 帧 warp 到 t+1，剩下的就是运动解释不掉的变化。普通的快速运动会被抵消掉，
+      而帧差法会把所有快速运动都误报。</p>
+    </div></div>
+    <div class="stage"><div class="n">C</div><div>
+      <h3>Agentic 裁决（VLM + 工具，有预算）</h3>
+      <p>模型从<b>该 skill 的动作菜单</b>里选下一步看什么，最多若干轮。菜单是策展过的——
+      人物 skill 能放大到脸，运镜 skill 不能，两者互不越界。之后每条指控都要经过<b>反证质询</b>。</p>
+    </div></div>
+    <div class="stage"><div class="n">D</div><div>
+      <h3>分数合成（确定性，无 VLM）</h3>
+      <p><b>从不问 VLM 要分数。</b>分数由确认的、定位的、分级的缺陷机械算出。
+      每一分扣减都指向一个 <code>(帧区间, 框, 类型)</code>，可以被人复核。</p>
+    </div></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">04</span><h2>为什么模型不直接打分</h2></div>
+  <div class="col stack">
+    <p>自由的 1–10 分让判官无处立足。实测：14 条 finding <b>全部</b>填了 0.5 置信度；
+    420 个 aspect 分数只有 <b>3 个取值</b>。分辨率不是靠细分档位得来的——
+    再细分只会让它更往中间挤。</p>
+    <p>所以判官只判<b>档位</b>，分数由档位推出：</p>
+  </div>
+  <div class="col ladder">
+    <div class="rung" data-g="clean"><span class="g">clean</span><span class="s">10</span><span class="d">未发现问题</span></div>
+    <div class="rung"><span class="g">trace</span><span class="s">8</span><span class="d">只有逐帧仔细看才能发现，正常观看完全不影响</span></div>
+    <div class="rung"><span class="g">minor</span><span class="s">6</span><span class="d">认真观看时能注意到，但不影响整体观感</span></div>
+    <div class="rung" data-g="major"><span class="g">major</span><span class="s">4</span><span class="d">正常观看一眼可见，明显损害成片质量</span></div>
+    <div class="rung" data-g="severe"><span class="g">severe</span><span class="s">2</span><span class="d">毁掉这个镜头，或使视频无法用于其预期用途</span></div>
+  </div>
+  <div class="col stack">
+    <p>而且<b>每一类缺陷都写了自己的四档判据，并且带分界线</b>。
+    「手部畸形什么算 major」和「闪烁什么算 major」不是一回事，通用刻度说不清任何一个：</p>
+  </div>
+  <div class="col note">
+    <p class="mono" style="font-size:12.5px; color:var(--ink-3)">hand_malformation · minor(6分)</p>
+    <p>能明确指出问题——某帧手指数量不对——但只出现在个别帧，或手在画面中较小。
+    <b>分界：按正常速度播放会不会注意到？会注意到就是 major；只有暂停或放大才发现，就是 minor。</b></p>
+  </div>
+  <div class="col stack">
+    <p><b>分辨率来自增加判断轴，不是增加档位。</b>每个轴都保持在模型判得准的粒度：</p>
+  </div>
+  <div class="axes">
+    <div class="axis"><span class="t">severity 严重度</span>
+      <span class="v">trace / minor<br>major / severe</span>
+      <span class="w">看到它时有多严重</span></div>
+    <div class="axis"><span class="t">extent 持续范围</span>
+      <span class="v">flash / brief<br>recurring / throughout</span>
+      <span class="w">占了多长时间</span></div>
+    <div class="axis"><span class="t">salience 显著位置</span>
+      <span class="v">peripheral<br>secondary / primary</span>
+      <span class="w">在不在观众看的地方</span></div>
+  </div>
+  <div class="col note">
+    <p>4 × 4 × 3 = 48 种组合，单条 finding 可产生 <b>44 个不同分数</b>。
+    同样是「major 手部畸形」：一闪而过且在背景里 = <span class="mono">7.33</span>，
+    全程持续且在主体上 = <span class="mono">4.60</span>。</p>
+    <p><b>salience 这个轴补上了严重度根本表达不了的东西</b>——主体特写上的手部畸形，
+    和背景路人身上同样的畸形，不是一回事。</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">05</span><h2>三个反直觉的设计，和它们的证据</h2></div>
+
+  <div class="col stack">
+    <h3>证据必须能回答被问的问题</h3>
+    <p>判官 <b>85%</b> 的 finding 挤在 <code>major</code> 一档。原因不是档位文字写得差——
+    是 <code>severity</code> 的分界写的是「<b>正常尺寸</b>下会不会注意到」，
+    而搜索阶段返回的<b>全是放大裁剪</b>。四个轴里三个答不了，答不了的问题就退回中间偏高的那档。</p>
+    <p>修法：证据包必须配对给出<b>全图原尺寸</b>（判严重度和位置）+ <b>放大图</b>（判存在性）+
+    <b>全片采样</b>（判范围）。跨 8 条不同视频实测后，severity 从 85% 挤一档变成
+    <b>minor 4 / major 4</b>。</p>
+  </div>
+
+  <div class="col stack">
+    <h3>反证的举证责任必须放在「替代解释」身上</h3>
+    <p>第一次真实运行：表面全 10.00，实际是 <b>10 条指控全被撤回</b>。
+    撤回理由全是同一个形状——提出一个替代解释就完事：「覆盖着泥浆」「快速运动的模糊」。</p>
+    <p>每个解释单独看都成立。问题在于我写的是「存疑一律 retract」，
+    而<b>对任何视觉现象，足够聪明的模型总能编出无罪解释</b>。这等于把标准设成「必须排除一切其他可能」。</p>
+    <p>更糟的是它形成闭环：为降低假阳性建的两个机制（免罚清单、易混淆项），
+    <b>被反证方当成了万能免罪符</b>。</p>
+    <p>修法：反证方必须<b>验证</b>自己的解释——说是运动模糊，就得在慢速帧找到该部位清晰的证据。
+    给不出支持证据的，<b>代码层强制不予撤回</b>。撤回率从 100% 降到 0–43%。</p>
+  </div>
+
+  <div class="col stack">
+    <h3>沉默不等于无罪</h3>
+    <p>三条视频里，<b>46 个 aspect 拿满分，只有 7 个有扣分</b>——而那 46 个从未被判定过，
+    只是恰好没有 finding 落上去。被问「列出你确认的问题」时，判官只报最显眼的一两个。</p>
+    <p><b>任何打分公式都无法在它没拿到的输入上做出区分。</b></p>
+    <p>修法：判官必须对 skill 覆盖的<b>每一个</b> aspect 表态。覆盖了却没表态的，
+    报「未检查」而不是给满分——否则<b>少跑一个 skill 反而会抬高总分</b>。</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">06</span><h2>验证到哪一步了</h2></div>
+  <div class="col stack">
+    <p>这一节是这份文档最重要的部分。<b>已验证</b>指有实测数字支撑，<b>未验证</b>指目前只是设计假设。</p>
+  </div>
+  <div class="scroll"><table>
+    <thead><tr><th>主张</th><th>状态</th><th class="num">证据</th></tr></thead>
+    <tbody>
+      <tr><td>448px 裁剪能让 VLM 看出手指缺陷</td>
+        <td><span class="chip ok">已验证</span></td>
+        <td>三个模型都报出了空间定位的具体畸形</td></tr>
+      <tr><td>agent loop 会选合理动作、不崩溃</td>
+        <td><span class="chip ok">已验证</span></td>
+        <td>8 skill 全跑通，动作序列符合级联设计</td></tr>
+      <tr><td>档位 + 三轴能产生足够分辨率</td>
+        <td><span class="chip ok">已验证</span></td>
+        <td class="num">44 / 48 个不同分数</td></tr>
+      <tr><td>逐项表态能拉开模型差距</td>
+        <td><span class="chip ok">已验证</span></td>
+        <td class="num">合成对照 7.45 / 6.70 / 5.45</td></tr>
+      <tr><td>多相位共识能滤掉采样噪声</td>
+        <td><span class="chip un">部分</span></td>
+        <td class="num">丢弃率 29–44%，丢的是单相位噪声</td></tr>
+      <tr><td>可疑度图优于均匀采样</td>
+        <td><span class="chip un">部分</span></td>
+        <td>短瞬态缺陷上 hit@10 0.50 vs uniform@8 0.31</td></tr>
+      <tr><td><b>改动后的信噪比确实提高了</b></td>
+        <td><span class="chip no">未验证</span></td>
+        <td>实验进行中</td></tr>
+      <tr><td><b>分数与人类偏好一致</b></td>
+        <td><span class="chip no">未验证</span></td>
+        <td>MQ benchmark 跑批中（100 对）</td></tr>
+      <tr><td><b>29 个 aspect 里哪些真的能评</b></td>
+        <td><span class="chip no">未验证</span></td>
+        <td>需要跨几十条 prompt 的分布</td></tr>
+      <tr><td><b>结论在换判官后仍成立</b></td>
+        <td><span class="chip no">未验证</span></td>
+        <td>只在 gemma-4-31b 上跑过</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="col note flag">
+    <p><b>一个必须记住的负面结果。</b>仅仅把采样相位平移几帧——覆盖同一段视频、同样时长——
+    所有有信号的 aspect <b>信噪比都 &lt; 1</b>（0.20–0.87），总分排序三次跑出三种。</p>
+    <p>这否定了两个诱人的说法：「人手结构分得开模型」是采样运气；
+    「扩样本就能做收拢」也不成立，因为这类噪声不随样本量平均。
+    多相位共识就是针对它做的，但<b>它是否真的把信噪比提上去了，还没测出来</b>。</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">07</span><h2>已知的坑</h2></div>
+  <div class="col stack">
+    <p><b>静默失败是这套系统最危险的失败模式。</b>已经抓到过三个，共同点是：不报错、不崩溃、
+    日志里不留痕，<b>只让结果悄悄变好看</b>——反证举证责任反了导致满分，
+    编译器漏掉运镜要求，置信度解析失败吞掉整条 finding。
+    对评测系统而言，偏向乐观的静默失败会让所有模型看起来都不错，正好是要避免的天花板。</p>
+    <p>现在的护栏一律是「宁可吵闹，不要安静」：撤回率越界标记不可信、兜底补要求并记录、
+    宽松解析而非丢弃。</p>
+  </div>
+  <div class="grid2">
+    <div class="limit"><strong>指控方与反证方是同一个模型</strong>
+      <p>等于让它自己推翻自己。跨模型反证应该更强，但需要第二个 endpoint 才能验证。</p></div>
+    <div class="limit"><strong>长 prompt 中段的指令会被稀释</strong>
+      <p>同一条约束放在规则块第 7 条时 14/14 失效，挪到输出块正上方立刻生效。
+      必须始终成立的约束要么放在模型正在写那个字段的位置，要么用代码兜底。</p></div>
+    <div class="limit"><strong>格点重合导致同分</strong>
+      <p>判到同一个类别组合就必然同分。这是分类式判定的固有代价——换来可复现，代价是格点内不可再分。</p></div>
+    <div class="limit"><strong>MQ benchmark 只标了运动</strong>
+      <p>VQ/TA 列全是 invalid，逐视频缺陷标签也几乎没标。所以只能验证运动这一组，
+      且只能做 pairwise 排序对齐。</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-num">08</span><h2>下一步，需要你定夺</h2></div>
+  <div class="col stack">
+    <p>两个实验正在跑，它们的结果会决定选哪条路：<b>信噪比实验</b>（共识值不值 3 倍成本）
+    和 <b>MQ 100 对</b>（分数能不能预测人的偏好）。下面是几条互斥的方向。</p>
+  </div>
+  <div class="grid2">
+    <div class="opt">
+      <h3>A · 先把人评对齐做扎实</h3>
+      <p class="why">MQ 100 对若显示方向准确率明显高于 50%，就在 dev.csv 上标定 tie 阈值，
+      扩到全部 998 对报数。这是唯一能说「评得准」的路径。</p>
+      <p class="cost">全量约 5–6 小时 · 只能验证运动一组</p>
+    </div>
+    <div class="opt">
+      <h3>B · 先降噪再谈其他</h3>
+      <p class="why">若信噪比实验显示共识没把噪声压下去，那么所有区分度都不可信。
+      需要先解决「分数取决于恰好看到哪几帧」，否则后面做什么都是在噪声上叠加。</p>
+      <p class="cost">改动在打分与采样层 · 需重跑验证</p>
+    </div>
+    <div class="opt">
+      <h3>C · 换更强的模型再评估</h3>
+      <p class="why">目前所有结论都来自 gemma-4-31b。若换强模型后撤回率、分档分布、
+      动作选择显著变好，那说明当前瓶颈在判官而非架构，优先级要重排。</p>
+      <p class="cost">需要可用的 API key 或第二个 endpoint</p>
+    </div>
+    <div class="opt">
+      <h3>D · 扩样本做 aspect 收拢</h3>
+      <p class="why">29 个 aspect 太多。收拢分析（覆盖率/区分度/稳定性/撤回率/冗余度）
+      已经写好并在合成数据上验过，但<b>必须等信噪比确认后再跑</b>，否则会把噪声当成结论。</p>
+      <p class="cost">依赖 B 先完成</p>
+    </div>
+  </div>
+  <div class="col note">
+    <p><b>我的建议是 B → A。</b>信噪比是其他一切的前提：如果分数主要由采样运气决定，
+    那么人评对齐做出来的相关性也是运气的相关性。但如果实验显示共识已经把噪声压住，
+    那就直接走 A，因为人评对齐是唯一能回答「这套东西到底准不准」的东西。</p>
+  </div>
+</section>
+
+<footer>
+  <p>代码与完整设计文档：<a href="https://github.com/YueLiao/agentic-video-eval">github.com/YueLiao/agentic-video-eval</a>　·　
+  实测记录见仓库 <code>notes/</code></p>
+</footer>
+</div>
