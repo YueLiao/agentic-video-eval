@@ -350,10 +350,16 @@ def synthesize(verdicts: Iterable[SkillVerdict], *, total_frames: int,
     if n_judgeable and total_f == 0 and raised == 0:
         warnings.append("没有任何 skill 提出过 finding:请确认判官确实在检查,"
                         "而不是每轮都直接 conclude")
-    vs = VideoScore(overall, dims, asp, group_rollup(asp), dict(NOT_SCORED),
-                    total_f, total_r, rate, caps, warnings)
-    vs.composites = composite_views(asp)
-    return vs
+    # Keyword arguments throughout: inserting `composites` positionally between
+    # `groups` and `not_scored` silently shifted every later field by one, so
+    # `retraction_rate` received the caps list and every scored video in a
+    # 200-video run died in json.dumps. Positional construction of a dataclass
+    # this wide has no defence against a field being added in the middle.
+    return VideoScore(
+        overall=overall, dimensions=dims, aspects=asp,
+        groups=group_rollup(asp), composites=composite_views(asp),
+        not_scored=dict(NOT_SCORED), n_findings=total_f, n_retracted=total_r,
+        retraction_rate=rate, caps_fired=caps, warnings=warnings)
 
 
 @dataclass

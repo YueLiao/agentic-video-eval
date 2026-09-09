@@ -108,11 +108,27 @@ def main() -> int:
     todo = [v for v in videos if v not in scores]
     print(f"待评测 {len(todo)} 个视频, {args.workers} 并发", flush=True)
 
+    # Smoke one video before committing to the batch. The first run of this
+    # script spent an hour and failed all 200 with the same exception -- a
+    # dataclass field inserted mid-signature -- and reported it only at the end,
+    # because per-item failures were caught and stored rather than surfaced.
+    # A batch job that cannot fail fast will always fail slowly.
     vlm = VLMClient(model=os.environ.get("AGENTEVAL_VLM_MODEL", "gemma-4-31b-it"),
                     base_url=os.environ.get("AGENTEVAL_VLM_BASE_URL",
                                             "http://127.0.0.1:8005/v1"),
                     max_tokens=1400, timeout_s=420,
                     cache_dir=out / "llm_cache")
+    if todo:
+        probe = todo[0]
+        print(f"冒烟:先跑 1 个 ({Path(probe).name}) ...", flush=True)
+        smoke = score_video(os.path.join(ROOT, probe), videos[probe],
+                            out / "runs" / "_smoke", vlm)
+        if smoke.get("motion_plausibility") is None:
+            print(f"冒烟失败,中止批量:{smoke}", file=sys.stderr)
+            return 2
+        print(f"冒烟通过 (运动合理性={smoke['motion_plausibility']:.2f}, "
+              f"{smoke['elapsed_s']:.0f}s/视频) → 开始批量\n", flush=True)
+
     t0 = time.time(); done = [0]
 
     def work(rel: str):
