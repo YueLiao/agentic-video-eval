@@ -255,7 +255,10 @@ def run_skill(skill: Skill, ctx: SkillContext, vlm: VLMClient,
             + CONFIDENCE_CONTRACT
             + "\n只输出 JSON:\n"
               '{"summary": "...", "findings": [{"kind": "...", '
-              '"severity": "trace|minor|major|severe", "confidence": 0.9|0.7|0.4|0.2, '
+              '"severity": "trace|minor|major|severe", '
+              '"extent": "flash|brief|recurring|throughout", '
+              '"salience": "peripheral|secondary|primary", '
+              '"confidence": 0.9|0.7|0.4|0.2, '
               '"t_span": [起,止], "bbox": [x,y,w,h], "rationale": "...", '
               '"evidence": ["E01"]}]}')
     vres = vlm.ask(system=skill.prompt + "\n" + JUDGE_RULES, user=user,
@@ -278,6 +281,8 @@ def run_skill(skill: Skill, ctx: SkillContext, vlm: VLMClient,
             verdict.findings.append(Finding(
                 kind=str(f.get("kind", "unknown")),
                 severity=str(f.get("severity", "minor")),
+                extent=str(f.get("extent", "brief")),
+                salience=str(f.get("salience", "secondary")),
                 t_span=tuple(f["t_span"][:2]) if f.get("t_span") else None,
                 bbox=tuple(f["bbox"][:4]) if f.get("bbox") else None,
                 confidence=parse_confidence(f.get("confidence")),

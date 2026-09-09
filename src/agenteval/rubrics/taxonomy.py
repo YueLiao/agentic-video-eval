@@ -50,8 +50,17 @@ from typing import Literal
 Observability = Literal["frame", "sequence"]
 
 #: Five grades, and the score each one anchors to. Even numbers on purpose: the
-#: gaps are where accumulation and extent move the final number, so the anchors
-#: stay legible while the score stays continuous.
+#: gaps are where the other axes move the final number, so the anchors stay
+#: legible while the score stays continuous.
+#:
+#: Resolution comes from **more axes, not more steps on one axis**. Subdividing
+#: severity would not help: measured over 55 findings the judge already put 47
+#: of them (85%) in `major` and only 3 in `minor`, so it is not using the four
+#: steps it has, and a free 1-10 scale earlier produced 0.5 on every single
+#: finding. Both are the same failure -- a single fine-grained dimension gives a
+#: judge nowhere to stand, so it retreats to the middle. Several coarse
+#: judgements it can actually make, combined, give far better resolution than
+#: one fine one it cannot.
 GRADES: tuple[str, ...] = ("trace", "minor", "major", "severe")
 GRADE_SCORE: dict[str, float] = {
     "clean": 10.0, "trace": 8.0, "minor": 6.0, "major": 4.0, "severe": 2.0,
@@ -62,6 +71,48 @@ GRADE_DESC: dict[str, str] = {
     "major": "正常观看一眼可见,明显损害成片质量",
     "severe": "毁掉这个镜头,或使视频无法用于其预期用途",
 }
+
+#: Second axis: how much of the clip's duration the defect occupies. Asked as a
+#: category rather than derived from `t_span`, because the judge's frame numbers
+#: are approximate -- it reports the same defect as @0-5, @1-9, @1-10 across
+#: sampling phases -- while "a flash" versus "most of the clip" is a judgement it
+#: makes reliably.
+EXTENT: dict[str, float] = {
+    "flash": 0.35,      # 一两帧,一闪而过
+    "brief": 0.60,      # 一小段,不到片长的四分之一
+    "recurring": 0.85,  # 反复出现,或断续贯穿
+    "throughout": 1.0,  # 几乎全程持续
+}
+EXTENT_DESC: dict[str, str] = {
+    "flash": "只在一两帧出现,一闪而过",
+    "brief": "持续一小段时间(不到片长四分之一)",
+    "recurring": "反复出现,或断断续续贯穿全片",
+    "throughout": "几乎全程持续存在",
+}
+
+#: Third axis: whether it lands where the viewer is looking. A malformed hand on
+#: the subject and the same malformation on a background extra are not the same
+#: failure, and no severity grade can express that difference.
+SALIENCE: dict[str, float] = {
+    "peripheral": 0.45,  # 画面边缘/背景次要处
+    "secondary": 0.75,   # 次要主体,或主体的非焦点部位
+    "primary": 1.0,      # 画面主体上,观众正在看的地方
+}
+SALIENCE_DESC: dict[str, str] = {
+    "peripheral": "位于画面边缘或背景,观众通常不会注意",
+    "secondary": "位于次要主体上,或主体的非焦点部位",
+    "primary": "就在画面主体上,观众视线所在之处",
+}
+
+
+def normalize_extent(v: str | None) -> str:
+    k = (v or "").strip().lower()
+    return k if k in EXTENT else "brief"
+
+
+def normalize_salience(v: str | None) -> str:
+    k = (v or "").strip().lower()
+    return k if k in SALIENCE else "secondary"
 
 #: Legacy three-grade names still emitted by judges and stored in old runs.
 _ALIAS: dict[str, str] = {"critical": "severe", "moderate": "minor",

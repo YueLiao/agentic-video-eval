@@ -26,7 +26,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Sequence
 
-from agenteval.rubrics.taxonomy import GRADE_SCORE, normalize_grade
+from agenteval.rubrics.taxonomy import (EXTENT, GRADE_SCORE, SALIENCE,
+                                        normalize_extent, normalize_grade,
+                                        normalize_salience)
 from agenteval.scoring.aspects import (ASPECTS, BY_GROUP, DEFECT_TO_ASPECT,
                                        GROUP_LABEL_ZH, NOT_SCORED, Aspect)
 from agenteval.skills.base import Finding, SkillVerdict
@@ -153,6 +155,19 @@ class VideoScore:
         return "\n".join(rows)
 
 
+def impact(f: Finding) -> float:
+    """How much this finding actually matters, from the two judged axes.
+
+    Replaces deriving extent from ``t_span``/``bbox``. Those numbers looked
+    precise and were not: across sampling phases the judge reported the same
+    defect as @0-5, @1-9 and @1-10, so a formula reading them was mostly reading
+    sampling phase. "A flash" versus "most of the clip" is the same information
+    stated at a resolution the judge can actually hold.
+    """
+    return (EXTENT.get(normalize_extent(f.extent), 0.6)
+            * SALIENCE.get(normalize_salience(f.salience), 0.75))
+
+
 def coverage(f: Finding, total_frames: int) -> float:
     """Fraction of the clip-volume a finding occupies, in [0.05, 1].
 
@@ -199,7 +214,7 @@ def _score_from_findings(live: Sequence[Finding],
     # across the clip, and collapsing both onto the ceiling was what left the
     # scale with three distinct values.
     lead_strength = (max(0.3, min(1.0, worst.confidence))
-                     * (0.6 + 0.4 * coverage(worst, total_frames)))
+                     * (0.4 + 0.6 * impact(worst)))
     score = 10.0 - (10.0 - ceiling) * lead_strength
 
     # Everything after the leading finding accumulates from there, so quantity
@@ -209,7 +224,7 @@ def _score_from_findings(live: Sequence[Finding],
         if i == lead_i:
             continue
         residual += (SEVERITY_WEIGHT.get(normalize_grade(f.severity), 0.12)
-                     * coverage(f, total_frames) * max(0.3, f.confidence))
+                     * impact(f) * max(0.3, f.confidence))
     score *= max(0.0, 1.0 - min(1.0, residual))
     cap_by = worst.kind if ceiling < 10.0 else None
     return round(score, 3), cap_by

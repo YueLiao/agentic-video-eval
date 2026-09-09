@@ -48,7 +48,9 @@ class Finding:
     """One defect or requirement violation, localized and evidence-backed."""
 
     kind: str                                   # defect type or requirement id
-    severity: str                               # minor | major | critical
+    severity: str                               # trace | minor | major | severe
+    extent: str = "brief"                       # flash | brief | recurring | throughout
+    salience: str = "secondary"                 # peripheral | secondary | primary
     t_span: tuple[int, int] | None = None
     bbox: tuple[float, float, float, float] | None = None
     confidence: float = 0.5
@@ -67,6 +69,7 @@ class Finding:
     def to_json(self) -> dict[str, Any]:
         return {
             "kind": self.kind, "severity": self.severity,
+            "extent": self.extent, "salience": self.salience,
             "t_span": list(self.t_span) if self.t_span else None,
             "bbox": [round(v, 4) for v in self.bbox] if self.bbox else None,
             "confidence": round(self.confidence, 3), "rationale": self.rationale,
@@ -121,10 +124,13 @@ VERDICT_SCHEMA: dict[str, Any] = {
             "type": "array",
             "items": {
                 "type": "object",
-                "required": ["kind", "severity", "confidence", "rationale", "evidence"],
+                "required": ["kind", "severity", "extent", "salience",
+                             "confidence", "rationale", "evidence"],
                 "properties": {
                     "kind": {"type": "string"},
                     "severity": {"enum": ["trace", "minor", "major", "severe"]},
+                    "extent": {"enum": ["flash", "brief", "recurring", "throughout"]},
+                    "salience": {"enum": ["peripheral", "secondary", "primary"]},
                     "t_span": {"type": "array", "items": {"type": "integer"}},
                     "bbox": {"type": "array", "items": {"type": "number"}},
                     "confidence": {"type": "number"},
