@@ -119,10 +119,23 @@ def main() -> int:
                     imgs += [ImageRef(path=p, caption="A/B 运动曲线")
                              for p in mv.images]
                     note += "\n\n" + mv.hint
+            swapped = None
+            if not args.no_swap:
+                # Re-render with the clips exchanged rather than reordering the
+                # list: any A/B baked into a picture has to move with it.
+                sv = aligned_pair(b, a, out / "views_sw", n=args.frames,
+                                  tag="pair_sw")
+                sw = [ImageRef(path=p, caption="A/B 逐时刻对照") for p in sv.images]
+                if args.motion_curves:
+                    smv = motion_pair(b, a, out / "views_sw", tag="motionpair_sw")
+                    sw += [ImageRef(path=p, caption="A/B 运动曲线")
+                           for p in smv.images]
+                swapped = sw or None
             obs = modes.compare(vlm, question=QUESTION + "\n\n" + note, images=imgs,
                                 system=SYSTEM, tag=f"cmp/{pid}",
-                                n_a=0 if args.no_swap else len(imgs) // 2,
-                                swap_check=not args.no_swap)
+                                n_a=len(imgs) // 2,
+                                swap_check=not args.no_swap,
+                                swapped_images=swapped)
             return pid, {"winner": str(obs.get("winner", "tie")).lower(),
                          "margin": obs.get("margin"),
                          "reason": str(obs.get("reason", ""))[:220],

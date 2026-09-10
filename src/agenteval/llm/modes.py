@@ -190,7 +190,8 @@ def enumerate_items(vlm: VLMClient, *, items: Sequence[tuple[str, str]],
 
 def compare(vlm: VLMClient, *, question: str, images: Sequence[ImageRef],
             system: str = "", tag: str = "ask/compare",
-            n_a: int = 0, swap_check: bool = True) -> Observation:
+            n_a: int = 0, swap_check: bool = True,
+            swapped_images: Sequence[ImageRef] | None = None) -> Observation:
     """Rank two things instead of scoring each.
 
     Relative judgements are more reliable than absolute ones, and the benchmark
@@ -201,16 +202,38 @@ def compare(vlm: VLMClient, *, question: str, images: Sequence[ImageRef],
     `n_a` is how many of `images` belong to side A, so the two sides can be
     genuinely swapped rather than the whole list reversed -- reversing would
     also reverse time within each side.
+
+    `swapped_images` must be supplied when any evidence has A/B burned into the
+    picture -- a plot with "A speed" in its legend, a grid with labelled rows.
+    Reordering the list leaves those labels saying the opposite of the position,
+    and the model sees self-contradictory evidence. Measured: adding a labelled
+    motion-curve plot without this drove the order-flip rate to 83/100 and
+    collapsed decidable pairs from 72 to 12. The swap check caught it, which is
+    what it is for, but the fix belongs at the source.
     """
     schema = {"type": "object"}
     r1 = _one(vlm, system or JSON_ONLY, question + "\n\n" + COMPARE_SCHEMA,
               images, schema, tag)
     p1 = r1.parsed or {}
-    if not swap_check or not r1.ok or not n_a or n_a >= len(images):
-        return Observation("compare", p1, r1.text, ok=r1.ok, error=r1.error)
+    if not r1.ok:
+        return Observation("compare", p1, r1.text, ok=False, error=r1.error)
+    if not swap_check:
+        return Observation("compare", p1, r1.text, ok=True)
+    if swapped_images is None and (not n_a or n_a >= len(images)):
+        # Silently skipping the check is how a position-biased judge passes for
+        # a working one. A run that left n_a unset reported zero flips and 61.1%
+        # direction accuracy while picking side A on 74% of pairs against a 37%
+        # base rate -- the accuracy was the bias, not a judgement. Refuse rather
+        # than return an unchecked answer.
+        return Observation("compare", p1, r1.text, ok=False,
+                           error="swap_check requested but no way to swap sides "
+                                 "(pass n_a or swapped_images)")
 
-    imgs = list(images)
-    swapped = imgs[n_a:] + imgs[:n_a]
+    if swapped_images is not None:
+        swapped = list(swapped_images)
+    else:
+        imgs = list(images)
+        swapped = imgs[n_a:] + imgs[:n_a]
     r2 = _one(vlm, system or JSON_ONLY, question + "\n\n" + COMPARE_SCHEMA,
               swapped, schema, tag + "/swap")
     p2 = r2.parsed or {}
