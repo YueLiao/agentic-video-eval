@@ -12,7 +12,9 @@ set -euo pipefail
 MODEL="${1:-/pub/evaluation_group/yue/models/gemma-4-31b-it}"
 PORT="${2:-8005}"
 GPUS="${3:-5}"
-NAME="$(basename "$MODEL")"
+# A HuggingFace cache path ends in the snapshot hash, which then becomes the
+# served model name and lands in every request and cache key. Override with NAME.
+NAME="${NAME:-$(basename "$MODEL")}"
 TP=$(awk -F, '{print NF}' <<< "$GPUS")
 VLLM="${VLLM_BIN:-/ning/vllm_env/bin/vllm}"
 
