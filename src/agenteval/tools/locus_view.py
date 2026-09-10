@@ -163,3 +163,70 @@ def worst_loci(video: VideoHandle, out_dir: Path, *, k: int = 3,
               "可疑不等于有问题:信号测的是'这里的变化无法用运动解释',"
               "遮挡、转向、光影变化都会触发它。请逐处确认。"),
     )
+
+
+def paired_loci(a: VideoHandle, b: VideoHandle, out_dir: Path, *, k: int = 3,
+                max_frames: int | None = 96, side: int = LEGIBLE,
+                z: float = 2.5) -> tuple[ToolResult, ToolResult]:
+    """Loci for two clips on one shared scale.
+
+    `compute_maps` exceedance-normalises within a video, which is right for
+    ranking moments inside one clip and wrong for every use across clips. Taken
+    per clip, `worst_loci` therefore hands back each clip's own top three
+    whether or not anything is wrong -- measured: three unrelated clips all
+    returned a top score of 3.784, which is the exceedance ceiling
+    -log10(1/n), identical to the digit. Magnifying those and asking which set
+    looks worse compares a broken clip's collapse against a clean clip's
+    ordinary motion blur, and the comparison has no common denominator.
+
+    Pooling both clips' raw cells before the transform gives one denominator:
+    a clean clip scores low and can legitimately return nothing, which is the
+    evidence that it is clean.
+    """
+    import numpy as np
+    from agenteval.signals.suspicion import (SIGNALS, _exceedance, compute_maps,
+                                             extract_loci, fuse)
+
+    try:
+        ra = compute_maps(str(a.path), max_frames=max_frames, raw=True)
+        rb = compute_maps(str(b.path), max_frames=max_frames, raw=True)
+    except Exception as e:  # noqa: BLE001
+        err = ToolResult(value={"error": f"{type(e).__name__}: {e}"[:90]},
+                         reliability=0.0)
+        return err, err
+
+    # One exceedance fit over the concatenation, applied to each half. Same
+    # transform, same denominator, so the two clips' scores mean the same thing.
+    na, out = {}, {}
+    for key in SIGNALS:
+        ma, mb = ra.get(key), rb.get(key)
+        if ma is None or mb is None:
+            continue
+        flat = np.concatenate([ma.ravel(), mb.ravel()])
+        joint = _exceedance(flat)
+        na[key] = joint[:ma.size].reshape(ma.shape)
+        out[key] = joint[ma.size:].reshape(mb.shape)
+
+    res = []
+    for maps, v, tag in ((na, a, "A"), (out, b, "B")):
+        loci = extract_loci(maps, z=z, max_loci=24)
+        picked: list[SuspicionLocus] = []
+        for l in loci:
+            if len(picked) >= k:
+                break
+            if all(abs(l.t_span[0] - p.t_span[0]) >= 6 for p in picked):
+                picked.append(l)
+        paths, vals = [], []
+        for l in picked:
+            r = locus_strip(v, l, out_dir, side=side, tag=tag)
+            if r.images:
+                paths += r.images
+                vals.append(r.value)
+        peak = float(fuse(maps).max()) if maps else 0.0
+        res.append(ToolResult(
+            value={"loci": vals, "n": len(vals), "peak": round(peak, 3),
+                   "shared_scale": True},
+            images=paths, reliability=0.7, backend="paired_loci",
+            hint=("这些可疑处的分数是**两段视频放在一起算的**,所以 A 和 B 的分数可以直接比。\n"
+                  "一段视频可疑处少或没有,本身就是它更干净的证据。")))
+    return res[0], res[1]
