@@ -618,46 +618,67 @@ def temporal_extent(video: VideoHandle, out_dir: Path, *, bbox, n: int = 8,
               "1 格=flash,2-3 格且连续=brief,间隔出现=recurring,几乎每格都有=throughout。"),
     )
 
-def diff_strip(video: VideoHandle, out_dir: Path, *, n: int = 16,
-               side: int = 200, cols: int = 8, tag: str = "diff") -> ToolResult:
-    """Consecutive-frame absolute difference, as a strip.
+def diff_strip(video: VideoHandle, out_dir: Path, *, n: int = 6,
+               side: int = 300, tag: str = "diff") -> ToolResult:
+    """The most and least eventful *consecutive* frame pairs, as raw frames.
 
     A freeze is the one defect a grid of sampled frames cannot show: the stall
     happens between two samples and the samples themselves look fine. Measured:
-    asked to check ten motion defects on a 16-frame grid, the model reported
-    appearance defects on 4-21% of clips and freeze, slip, speed and amplitude
-    on exactly 0% -- not reluctance, an absence of evidence. Differencing
-    *adjacent* frames puts rate back in the picture: a stalled moment is a cell
-    that is almost black, and a jump is a cell that is almost white.
+    asked to check ten motion defects on a 16-frame grid, gemma-4-31b reported
+    appearance defects on 4-21% of 200 clips and freeze, slip and amplitude on
+    exactly 0%.
+
+    The first attempt at fixing that differenced the 16 *sampled* frames, which
+    inherits the identical blindness -- differencing frame 16 against frame 21
+    cannot show a stall between 20 and 21 -- and it changed nothing (0% stayed
+    0%, and the extra images cost 14 points of accuracy by diluting the items
+    that were working). Measured on the same 200 clips: 8% have a near-still
+    interval at 16-sample granularity, while the full-rate `freeze` signal is
+    the strongest single predictor on strongly-agreed pairs at 73.3%. The defect
+    is real at frame rate and absent at sampling rate.
+
+    So the difference energy is computed over *every* consecutive pair, and the
+    extreme pairs are shown as the two original frames side by side. The signal
+    says which moments to look at and cannot tell a stall from a static shot;
+    that judgement is the model's, which is the division of labour this whole
+    module exists for.
     """
     import cv2
-    idx = uniform_indices(video.total, min(n + 1, video.total))
-    frames = video.read_gray(idx, max_side=side * 2)
-    if len(frames) < 2:
+    idx = list(range(video.total))
+    gray = video.read_gray(idx, max_side=192)
+    if len(gray) < 3:
         return ToolResult(value={"error": "too few frames"}, reliability=0.0)
-    tiles, energy = [], []
-    for i, (a, b) in enumerate(zip(frames, frames[1:])):
-        d = cv2.absdiff(a, b)
-        energy.append(float(d.mean()))
-        # Fixed gain, not per-cell normalisation: the cells have to be
-        # comparable to each other or "almost black" carries no meaning.
-        vis = np.clip(d.astype(np.float32) * 4.0, 0, 255).astype(np.uint8)
-        vis = cv2.applyColorMap(vis, cv2.COLORMAP_INFERNO)
-        tiles.append(_label(_resize_side(vis, side),
-                            f"f{idx[i]}->{idx[i + 1]}"))
-    img = _tile(tiles, cols)
-    p = _write(out_dir / tag, f"{tag}_{video.path.stem}"[:110], img)
-    e = np.asarray(energy)
+    e = np.asarray([float(cv2.absdiff(a, b).mean())
+                    for a, b in zip(gray, gray[1:])])
     med = float(np.median(e)) or 1e-6
+    k = max(1, n // 2)
+    low = np.argsort(e)[:k]
+    high = np.argsort(e)[-k:][::-1]
+    picks = [(int(i), "最静") for i in low] + [(int(i), "最动") for i in high]
+    picks.sort(key=lambda t: t[0])
+
+    want = sorted({i for i, _ in picks} | {i + 1 for i, _ in picks})
+    frames = dict(zip(want, video.read(want)))
+    tiles = []
+    for i, kind in picks:
+        a, b = frames.get(i), frames.get(i + 1)
+        if a is None or b is None:
+            continue
+        pair = _tile([_label(_resize_side(a, side), f"f{i}"),
+                      _label(_resize_side(b, side), f"f{i+1}")], 2)
+        tiles.append(_label(pair, f"{kind}  {e[i]/med:.2f}x", org=(6, 20)))
+    if not tiles:
+        return ToolResult(value={"error": "no pairs"}, reliability=0.0)
+    img = _tile(tiles, 1)
+    p = _write(out_dir / tag, f"{tag}_{video.path.stem}"[:110], img)
     return ToolResult(
-        value={"cell_energy": [round(v, 2) for v in energy],
-               "near_still_cells": [i for i, v in enumerate(energy)
-                                    if v < 0.2 * med],
-               "spike_cells": [i for i, v in enumerate(energy) if v > 3 * med]},
+        value={"n_pairs": len(e), "median_energy": round(med, 3),
+               "quietest": [[int(i), round(float(e[i] / med), 3)] for i in low],
+               "busiest": [[int(i), round(float(e[i] / med), 3)] for i in high]},
         images=[p], reliability=0.8, backend="diff_strip",
-        hint=("每一格是**相邻两个采样时刻的画面差异**(越亮=变化越大),格上标了帧号区间。\n"
-              "读法:某一格接近全黑=这段时间画面几乎没变(卡顿,或本就是静止镜头——"
-              "要回到原帧确认该不该动);某一格明显比邻格亮=速度突变或跳切;"
-              "亮度忽明忽暗=速度不稳。\n"
-              "**这张图只说明变化的多少,不说明变化得对不对。**"),
+        hint=("下面每一行是一对**相邻帧**(帧号已标),取自整段视频里变化最小和最大的几处,"
+              "行首标了该处变化量相对全片中位数的倍数。\n"
+              "标『最静』的几行:如果两帧几乎一模一样,而按画面内容此刻**本应有动作**,"
+              "那就是卡顿;如果本来就是静止镜头或静止物体,那是正常的。**这个判断只能由你做。**\n"
+              "标『最动』的几行:如果两帧之间主体位置突变、中间没有过渡,那是跳变或剪切。"),
     )
