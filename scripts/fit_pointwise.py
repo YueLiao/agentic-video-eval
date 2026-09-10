@@ -152,6 +152,16 @@ def main() -> int:
                     help="fit on strongly-agreed pairs only")
     ap.add_argument("--family", default=None,
                     help="fit and test on one pair family, e.g. seed")
+    ap.add_argument("--ladder-only", action="store_true",
+                    help="restrict to the same-recipe capacity ladders "
+                         "(cosmos_nano/super, wan5b/14b) -- the only cross-model "
+                         "pairs where the quality gap and the fingerprint gap "
+                         "are not collinear")
+    ap.add_argument("--min-annotators", type=int, default=0,
+                    help="drop pairs with fewer annotators than this. dev is "
+                         "entirely single-annotator and calls 39%% of seed pairs "
+                         "a tie; val_ac has 3-5 and calls 64%% a tie. Fitting "
+                         "across that gap fits one question and scores another.")
     ap.add_argument("--extra", nargs="*", default=[],
                     help="additional {rel: {name: value}} json feature files")
     ap.add_argument("--drop-base", action="store_true",
@@ -166,6 +176,15 @@ def main() -> int:
         tr_rows = [r for r in tr_rows if r["family"] == args.family]
         te_rows = [r for r in te_rows if r["family"] == args.family]
         print(f"限定 family={args.family}")
+    if args.ladder_only:
+        lad = lambda rs: [r for r in rs
+                          if str(r.get("is_ladder")).lower() in ("1", "true")]
+        tr_rows, te_rows = lad(tr_rows), lad(te_rows)
+        print("限定 is_ladder(同配方梯队)")
+    if args.min_annotators:
+        n = args.min_annotators
+        tr_rows = [r for r in tr_rows if int(r.get("n_annotations") or 1) >= n]
+        print(f"训练集只保留 ≥{n} 名标注员的对: {len(tr_rows)}")
     rels = sorted({r[k] for rows in (tr_rows, te_rows) for r in rows
                    for k in ("path_A", "path_B")})
     print(f"{args.train}: {len(tr_rows)} 对 · {args.test}: {len(te_rows)} 对 · "
