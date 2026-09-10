@@ -55,6 +55,11 @@ SYSTEM = """\
 
 # Each item is something a person could point at in a specific frame. Vague
 # items ("是否自然") are what the comparison mode was already failing at.
+# Split by which evidence can answer them. Measured on 1220 dev seed clips: on
+# a 16-frame grid the appearance items fire on 5-17% of clips and the rate items
+# on 0-1%, because a grid of stills does not contain rate. Asking both in one
+# call also dilutes the items that were working -- adding temporal images to the
+# single call cost 14 points of direction accuracy.
 ITEMS: list[tuple[str, str, float]] = [
     ("freeze",       "画面卡住或重复:相邻两帧几乎完全相同,而这段时间本应有运动", 1.5),
     ("jump",         "跳变或瞬移:主体位置在相邻两帧间突然改变,中间没有过渡", 1.5),
@@ -67,6 +72,22 @@ ITEMS: list[tuple[str, str, float]] = [
     ("speed",        "速度忽快忽慢,或运动的快慢与该动作的常识不符", 1.0),
     ("amplitude",    "该动的主体几乎没有动,整段近乎静止", 1.0),
 ]
+APPEARANCE = {"jump", "limb_deform", "rigid_deform", "appear_vanish",
+              "penetration"}
+TEMPORAL = {"freeze", "float", "puppet", "speed", "amplitude"}
+
+TEMPORAL_SYSTEM = """\
+你在判断一段 **AI 生成视频**的运动在**时间上**是否有问题。
+
+你会看到:
+1. 整段视频的采样帧(了解画面里有什么、本该发生什么动作);
+2. 从**全部相邻帧**里挑出的变化最小和最大的几处,每处给出**连续两帧**的原图。
+
+关键:工具只能测出"这两帧几乎没有变化",**它分不清这是卡顿还是本来就是静止镜头**。
+这个判断只有你能做——请先看清画面此刻**本应发生什么**,再下结论。
+
+同样,大多数片段在大多数项上没有问题。指不出具体是哪两帧、哪个部位,就判 `无`。
+"""
 OPTIONS = ("无", "轻微", "明显", "严重")
 PENALTY = {"无": 0.0, "轻微": 0.25, "明显": 0.6, "严重": 1.0}
 CONTEXT = ("下面是这段视频按时间顺序均匀采样的帧(可能分成多张图,按先后接续)。\n"
@@ -107,6 +128,9 @@ def main() -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--frames", type=int, default=16)
+    ap.add_argument("--two-call", action="store_true",
+                    help="appearance items from the frame grid, rate items from "
+                         "the full-rate difference evidence, in separate calls")
     ap.add_argument("--temporal-evidence", action="store_true",
                     help="also show the difference strip and motion curve, so "
                          "the rate items have something to answer from")
@@ -143,6 +167,45 @@ def main() -> int:
                 return rel, {"error": "no strip"}
             imgs = [ImageRef(path=p, caption="采样帧") for p in strip.images]
             ctx = CONTEXT + "\n\n" + strip.hint
+            if args.two_call:
+                got = {}
+                a = modes.enumerate_items(
+                    vlm, items=[(k, d) for k, d, _w in ITEMS
+                                if k in APPEARANCE],
+                    context=ctx, images=imgs, options=OPTIONS,
+                    system=SYSTEM, tag=f"chk/app/{rel}")
+                if a.ok and isinstance(a.get("items"), dict):
+                    got.update(a.get("items"))
+                ds = diff_strip(v, out / "temporal")
+                mc = motion_curves(v, out / "temporal")
+                timgs = list(imgs)
+                tctx = ctx
+                for r in (ds, mc):
+                    if r.images:
+                        timgs += [ImageRef(path=p, caption=r.backend)
+                                  for p in r.images]
+                        tctx += "\n\n" + r.hint
+                # Hand the model the measurement as an anchor rather than
+                # asking it to estimate rate by eye: the signal says which
+                # moments are quiet, the model says whether they should be.
+                if ds.value.get("quietest"):
+                    tctx += ("\n\n工具测得(相对全片中位数的倍数):最静的几处 "
+                             + ", ".join(f"f{i}->{i+1}={v_:.2f}x"
+                                         for i, v_ in ds.value["quietest"])
+                             + ";最动的几处 "
+                             + ", ".join(f"f{i}->{i+1}={v_:.2f}x"
+                                         for i, v_ in ds.value["busiest"]))
+                t = modes.enumerate_items(
+                    vlm, items=[(k, d) for k, d, _w in ITEMS if k in TEMPORAL],
+                    context=tctx, images=timgs, options=OPTIONS,
+                    system=TEMPORAL_SYSTEM, tag=f"chk/tmp/{rel}")
+                if t.ok and isinstance(t.get("items"), dict):
+                    got.update(t.get("items"))
+                if not got:
+                    return rel, {"error": "both calls failed"}
+                missing = [k for k, _d, _w in ITEMS if k not in got]
+                return rel, {"items": got, "score": round(score_clip(got), 2),
+                             "missing": missing}
             if args.temporal_evidence:
                 # freeze / speed / amplitude / float ask about rate, and rate is
                 # exactly what a grid of stills does not contain. Measured: those

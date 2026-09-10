@@ -76,11 +76,18 @@ def design(feats: dict, rels: list[str]) -> np.ndarray:
     return np.log1p(np.maximum(x, 0.0))
 
 
+def set_feats(names):
+    """Replace the feature list in place, so callers holding FEATS see it."""
+    FEATS.clear()
+    FEATS.extend(names)
+
+
 def pairs_of(split: str) -> list[dict]:
     return list(csv.DictReader(open(f"{R012}/{split}.csv")))
 
 
 def evaluate(name: str, w: np.ndarray, mu, sd, feats, rows, margin: float):
+    """Report both the margin view and VideoAlign's, which is the yardstick."""
     got = [r for r in rows
            if r["path_A"] in feats and r["path_B"] in feats
            and "error" not in feats[r["path_A"]]
@@ -119,6 +126,16 @@ def evaluate(name: str, w: np.ndarray, mu, sd, feats, rows, margin: float):
     base = sum(1 for r in got if r["MQ"] == "same") / len(got)
     print(f"  非平局方向 {hit/max(1,len(dec)):.1%} (n={len(dec)}/{len(nt)})  ·  "
           f"全体 {exact/len(got):.1%} (平凡基线 {base:.1%})")
+    from agenteval.meta.videoalign import acc_with_ties, acc_without_ties
+    H = {"AA": 1, "A": 1, "BB": -1, "B": -1, "same": 0}
+    h = [H[r["MQ"]] for r in got]
+    md = [s[r["path_A"]] - s[r["path_B"]] for r in got]
+    star, eps = acc_with_ties(h, md)
+    print(f"  [VideoAlign 口径] acc(无平局) {acc_without_ties(h, md):.1%}"
+          f"  ·  acc* {star:.1%} (eps*={eps:.3f})")
+    out["videoalign"] = {"acc_without_ties": round(acc_without_ties(h, md) * 100, 1),
+                         "acc_star": round(star * 100, 1),
+                         "epsilon_star": round(eps, 4)}
     out["nontie"] = {"acc": hit / max(1, len(dec)), "n": len(dec)}
     out["overall"] = {"acc": exact / len(got), "baseline": base}
     return out, s
@@ -133,17 +150,47 @@ def main() -> int:
     ap.add_argument("--margin", type=float, default=0.25)
     ap.add_argument("--strong-only", action="store_true",
                     help="fit on strongly-agreed pairs only")
+    ap.add_argument("--family", default=None,
+                    help="fit and test on one pair family, e.g. seed")
+    ap.add_argument("--extra", nargs="*", default=[],
+                    help="additional {rel: {name: value}} json feature files")
+    ap.add_argument("--drop-base", action="store_true",
+                    help="use only --extra features, to isolate their share")
     args = ap.parse_args()
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     sys.stdout.reconfigure(line_buffering=True)
 
     tr_rows, te_rows = pairs_of(args.train), pairs_of(args.test)
+    if args.family:
+        tr_rows = [r for r in tr_rows if r["family"] == args.family]
+        te_rows = [r for r in te_rows if r["family"] == args.family]
+        print(f"限定 family={args.family}")
     rels = sorted({r[k] for rows in (tr_rows, te_rows) for r in rows
                    for k in ("path_A", "path_B")})
     print(f"{args.train}: {len(tr_rows)} 对 · {args.test}: {len(te_rows)} 对 · "
           f"{len(rels)} 条视频")
     feats = load_features(rels, out / "features.json", args.workers)
+    if args.drop_base:
+        FEATS.clear()
+        feats = {k: {} for k in feats}
+    # Merge each extra source in under its own prefix, and require every clip to
+    # carry every extra feature -- a clip silently defaulting to 0 on a source
+    # that failed for it would be scored as if it had no defects.
+    for path in args.extra:
+        src = json.loads(Path(path).read_text())
+        name = Path(path).stem
+        keys = sorted({k for v in src.values() if isinstance(v, dict)
+                       and "error" not in v for k in v})
+        print(f"  并入 {name}: {len(keys)} 个特征, 覆盖 {len(src)} 条")
+        for k in keys:
+            FEATS.append(f"{name}.{k}")
+        for rel, v in list(feats.items()):
+            e = src.get(rel)
+            if not isinstance(e, dict) or "error" in e or any(k not in e for k in keys):
+                feats[rel] = {"error": f"missing {name}"}
+                continue
+            feats[rel] = {**v, **{f"{name}.{k}": e[k] for k in keys}}
     good = {k: v for k, v in feats.items() if "error" not in v}
     print(f"  特征可用 {len(good)}/{len(rels)}")
 
