@@ -84,8 +84,8 @@ def score_clip(items: dict) -> float:
     return max(0.0, 10.0 - pen)
 
 
-def sample(path: str, n: int, seed: int) -> list[dict]:
-    rows = list(csv.DictReader(open(path)))
+def sample_from(rows: list[dict], n: int, seed: int) -> list[dict]:
+    """Label-stratified subsample, so a small run keeps the tie rate."""
     rng = random.Random(seed)
     by: dict[str, list[dict]] = {}
     for r in rows:
@@ -100,7 +100,10 @@ def sample(path: str, n: int, seed: int) -> list[dict]:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", default="dev", choices=["dev", "val_ac"])
-    ap.add_argument("--n", type=int, default=100)
+    ap.add_argument("--n", type=int, default=100,
+                    help="0 = every pair in the split (after --family)")
+    ap.add_argument("--family", default=None,
+                    help="restrict to one pair family, e.g. seed")
     ap.add_argument("--out", required=True)
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--frames", type=int, default=16)
@@ -113,7 +116,11 @@ def main() -> int:
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
     sys.stdout.reconfigure(line_buffering=True)
 
-    pairs = sample(f"{R012}/{args.split}.csv", args.n, seed=11)
+    pairs = list(csv.DictReader(open(f"{R012}/{args.split}.csv")))
+    if args.family:
+        pairs = [r for r in pairs if r["family"] == args.family]
+    if args.n:
+        pairs = sample_from(pairs, args.n, seed=11)
     vids = sorted({r[k] for r in pairs for k in ("path_A", "path_B")})
     print(f"{args.split}: {len(pairs)} 对, {len(vids)} 条视频")
 
