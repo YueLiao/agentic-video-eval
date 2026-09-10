@@ -34,7 +34,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from agenteval.llm import modes                          # noqa: E402
 from agenteval.llm.client import ImageRef, VLMClient     # noqa: E402
 from agenteval.media.clip import VideoHandle             # noqa: E402
-from agenteval.tools.renders import filmstrip            # noqa: E402
+from agenteval.tools.renders import (diff_strip, filmstrip,  # noqa: E402
+                                     motion_curves)
 
 ROOT = "/pub/evaluation_group/cy/rm_videos"
 R012 = ("/pub/evaluation_group/cy/mq_promptgen/pairing/review_results/"
@@ -103,6 +104,9 @@ def main() -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--frames", type=int, default=16)
+    ap.add_argument("--temporal-evidence", action="store_true",
+                    help="also show the difference strip and motion curve, so "
+                         "the rate items have something to answer from")
     ap.add_argument("--margin", type=float, default=0.3,
                     help="score gap below which the pair is called a tie")
     args = ap.parse_args()
@@ -130,10 +134,21 @@ def main() -> int:
                               n=args.frames, cols=8, side=400)
             if not strip.images:
                 return rel, {"error": "no strip"}
+            imgs = [ImageRef(path=p, caption="采样帧") for p in strip.images]
+            ctx = CONTEXT + "\n\n" + strip.hint
+            if args.temporal_evidence:
+                # freeze / speed / amplitude / float ask about rate, and rate is
+                # exactly what a grid of stills does not contain. Measured: those
+                # four items fired on 0% of 200 clips without this.
+                for tool in (diff_strip, motion_curves):
+                    r = tool(v, out / "temporal")
+                    if r.images:
+                        imgs += [ImageRef(path=p, caption=r.backend)
+                                 for p in r.images]
+                        ctx += "\n\n" + r.hint
             obs = modes.enumerate_items(
-                vlm, items=[(k, d) for k, d, _w in ITEMS], context=CONTEXT,
-                images=[ImageRef(path=p, caption="采样帧") for p in strip.images],
-                options=OPTIONS, system=SYSTEM, tag=f"chk/{rel}")
+                vlm, items=[(k, d) for k, d, _w in ITEMS], context=ctx,
+                images=imgs, options=OPTIONS, system=SYSTEM, tag=f"chk/{rel}")
             if not obs.ok:
                 return rel, {"error": obs.error or "enum failed"}
             got = obs.get("items") or {}

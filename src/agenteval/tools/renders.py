@@ -617,3 +617,47 @@ def temporal_extent(video: VideoHandle, out_dir: Path, *, bbox, n: int = 8,
               "**判断 extent 用这张图**:数一下有问题的格子占几格——\n"
               "1 格=flash,2-3 格且连续=brief,间隔出现=recurring,几乎每格都有=throughout。"),
     )
+
+def diff_strip(video: VideoHandle, out_dir: Path, *, n: int = 16,
+               side: int = 200, cols: int = 8, tag: str = "diff") -> ToolResult:
+    """Consecutive-frame absolute difference, as a strip.
+
+    A freeze is the one defect a grid of sampled frames cannot show: the stall
+    happens between two samples and the samples themselves look fine. Measured:
+    asked to check ten motion defects on a 16-frame grid, the model reported
+    appearance defects on 4-21% of clips and freeze, slip, speed and amplitude
+    on exactly 0% -- not reluctance, an absence of evidence. Differencing
+    *adjacent* frames puts rate back in the picture: a stalled moment is a cell
+    that is almost black, and a jump is a cell that is almost white.
+    """
+    import cv2
+    idx = uniform_indices(video.total, min(n + 1, video.total))
+    frames = video.read_gray(idx, max_side=side * 2)
+    if len(frames) < 2:
+        return ToolResult(value={"error": "too few frames"}, reliability=0.0)
+    tiles, energy = [], []
+    for i, (a, b) in enumerate(zip(frames, frames[1:])):
+        d = cv2.absdiff(a, b)
+        energy.append(float(d.mean()))
+        # Fixed gain, not per-cell normalisation: the cells have to be
+        # comparable to each other or "almost black" carries no meaning.
+        vis = np.clip(d.astype(np.float32) * 4.0, 0, 255).astype(np.uint8)
+        vis = cv2.applyColorMap(vis, cv2.COLORMAP_INFERNO)
+        tiles.append(_label(_resize_side(vis, side),
+                            f"f{idx[i]}->{idx[i + 1]}"))
+    img = _tile(tiles, cols)
+    p = _write(out_dir / tag, f"{tag}_{video.path.stem}"[:110], img)
+    e = np.asarray(energy)
+    med = float(np.median(e)) or 1e-6
+    return ToolResult(
+        value={"cell_energy": [round(v, 2) for v in energy],
+               "near_still_cells": [i for i, v in enumerate(energy)
+                                    if v < 0.2 * med],
+               "spike_cells": [i for i, v in enumerate(energy) if v > 3 * med]},
+        images=[p], reliability=0.8, backend="diff_strip",
+        hint=("每一格是**相邻两个采样时刻的画面差异**(越亮=变化越大),格上标了帧号区间。\n"
+              "读法:某一格接近全黑=这段时间画面几乎没变(卡顿,或本就是静止镜头——"
+              "要回到原帧确认该不该动);某一格明显比邻格亮=速度突变或跳切;"
+              "亮度忽明忽暗=速度不稳。\n"
+              "**这张图只说明变化的多少,不说明变化得对不对。**"),
+    )
