@@ -24,6 +24,8 @@ claims that are artifacts of the view rather than of the video.
 
 from __future__ import annotations
 
+import hashlib
+
 from pathlib import Path
 from typing import Sequence
 
@@ -47,9 +49,23 @@ def _label(img: np.ndarray, text: str, org=(6, 22), scale=0.6) -> np.ndarray:
 
 
 def _write(out_dir: Path, stem: str, img: np.ndarray, q: int = 94) -> Path:
+    """Content-addressed: the filename carries a hash of the encoded image.
+
+    The stems the callers build describe the *view* -- "strip_0_80",
+    "motion_curves" -- and not the clip, so two different videos of the same
+    length rendered into the same directory landed on the same path. Measured:
+    a 200-clip run wrote exactly two files, and with six workers each request
+    was sent whichever clip had written last. Every clip was scored, nothing
+    errored, and the numbers were meaningless.
+
+    Hashing the bytes makes a collision mean the images are identical, which is
+    a cache hit rather than a bug.
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
-    p = out_dir / f"{stem}.jpg"
-    p.write_bytes(bgr_to_jpeg_bytes(img, q))
+    data = bgr_to_jpeg_bytes(img, q)
+    p = out_dir / f"{stem}_{hashlib.sha1(data).hexdigest()[:10]}.jpg"
+    if not p.exists():
+        p.write_bytes(data)
     return p
 
 
