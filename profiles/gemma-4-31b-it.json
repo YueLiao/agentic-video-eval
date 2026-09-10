@@ -1,0 +1,101 @@
+{
+ "model": "gemma-4-31b-it",
+ "endpoint": "http://127.0.0.1:8005/v1",
+ "probed_at": 1789021279.1793373,
+ "tier": "strong",
+ "derived": {
+  "max_images": 48,
+  "zoom_px": 448,
+  "use_filmstrip": true,
+  "boxes_from": "vlm",
+  "votes": 1,
+  "enforce_constraints_in_code": false,
+  "require_clean_baseline": false
+ },
+ "techniques": [
+  "falsification",
+  "self_generated_verification",
+  "multi_turn_probing"
+ ],
+ "probes": {
+  "schema_fidelity": {
+   "name": "schema_fidelity",
+   "passed": true,
+   "value": 1,
+   "detail": "attempts=1 parsed={'a': {'b': [1, 2, 3]}, 'c': {'d': {'e': 'x'}}, 'f': True}",
+   "elapsed_s": 0.9,
+   "is_deployment_limit": false
+  },
+  "max_images": {
+   "name": "max_images",
+   "passed": true,
+   "value": 48,
+   "detail": "至少到 48 张仍正确",
+   "elapsed_s": 9.6,
+   "is_deployment_limit": true
+  },
+  "counting": {
+   "name": "counting",
+   "passed": true,
+   "value": 1.0,
+   "detail": "3/3 正确 (n=[3, 5, 8])",
+   "elapsed_s": 1.4,
+   "is_deployment_limit": false
+  },
+  "grounding": {
+   "name": "grounding",
+   "passed": true,
+   "value": 0.861,
+   "detail": "IoU=0.86 报告=[0.592, 0.194, 0.194, 0.194] 真值=[0.6, 0.2, 0.18, 0.18]",
+   "elapsed_s": 1.4,
+   "is_deployment_limit": false
+  },
+  "temporal_order": {
+   "name": "temporal_order",
+   "passed": true,
+   "value": [
+    3,
+    17,
+    42,
+    58,
+    91,
+    120
+   ],
+   "detail": "读出 [3, 17, 42, 58, 91, 120] 真值 [3, 17, 42, 58, 91, 120]",
+   "elapsed_s": 1.0,
+   "is_deployment_limit": false
+  },
+  "fine_detail_floor": {
+   "name": "fine_detail_floor",
+   "passed": true,
+   "value": 448,
+   "detail": "112px=6 224px=6 448px=ok → 最小可判读 448px",
+   "elapsed_s": 1.1,
+   "is_deployment_limit": false
+  },
+  "self_consistency": {
+   "name": "self_consistency",
+   "passed": true,
+   "value": 1.0,
+   "detail": "5 次采样最高一致率 100% (['10%', '10%', '10%', '10%', '10%'])",
+   "elapsed_s": 2.3,
+   "is_deployment_limit": false
+  },
+  "instruction_depth": {
+   "name": "instruction_depth",
+   "passed": true,
+   "value": "ZK7",
+   "detail": "埋在 ~1300 字中段的约束 → 返回 'ZK7'",
+   "elapsed_s": 0.5,
+   "is_deployment_limit": false
+  },
+  "refusal_to_invent": {
+   "name": "refusal_to_invent",
+   "passed": true,
+   "value": 0,
+   "detail": "在纯色图上报了 0 条缺陷 (期望 0)",
+   "elapsed_s": 0.5,
+   "is_deployment_limit": false
+  }
+ }
+}
