@@ -46,6 +46,13 @@ LEGIBLE = 768
 PAIR_COLS = 2
 
 
+def _plain(o):
+    """numpy scalars reach here from the frame indices; json refuses them."""
+    if isinstance(o, np.generic):
+        return o.item()
+    raise TypeError(type(o).__name__)
+
+
 def _crop_box(fr: np.ndarray, bbox, pad: float, side: int) -> np.ndarray:
     """Crop a normalized box with context, then scale up to `side`.
 
@@ -122,7 +129,25 @@ def worst_loci(video: VideoHandle, out_dir: Path, *, k: int = 3,
     moment answer one question three times, and the clip has a whole duration
     to account for.
     """
+    import json
+
     from agenteval.signals.suspicion import compute_maps, extract_loci
+
+    # The loci a clip yields depend on the clip and k, not on who reads them, so
+    # a second judge over the same corpus should not pay for the optical flow
+    # again. Content addressing already deduplicates the images; this
+    # deduplicates the computation behind them, which is the expensive half.
+    cache = out_dir / tag / f"_loci_{video.path.stem}_{k}.json"[:120]
+    if cache.exists():
+        try:
+            c = json.loads(cache.read_text())
+            paths = [Path(p) for p in c["images"]]
+            if all(p.exists() for p in paths):
+                return ToolResult(value=c["value"], images=paths,
+                                  reliability=0.7, backend="worst_loci",
+                                  hint=c.get("hint", ""))
+        except Exception:  # noqa: BLE001
+            pass
 
     try:
         maps = compute_maps(str(video.path), max_frames=max_frames)
@@ -155,14 +180,19 @@ def worst_loci(video: VideoHandle, out_dir: Path, *, k: int = 3,
             vals.append(r.value)
     if not paths:
         return ToolResult(value={"error": "no strips"}, reliability=0.0)
-    return ToolResult(
-        value={"loci": vals, "n": len(vals),
-               "top_score": round(picked[0].score, 3)},
-        images=paths, reliability=0.7, backend="worst_loci",
-        hint=("下面是这段视频里信号认为**最可疑的几处**,每处已裁剪放大,按时间排列。\n"
-              "可疑不等于有问题:信号测的是'这里的变化无法用运动解释',"
-              "遮挡、转向、光影变化都会触发它。请逐处确认。"),
-    )
+    hint = ("下面是这段视频里信号认为**最可疑的几处**,每处已裁剪放大,按时间排列。\n"
+            "可疑不等于有问题:信号测的是'这里的变化无法用运动解释',"
+            "遮挡、转向、光影变化都会触发它。请逐处确认。")
+    value = {"loci": vals, "n": len(vals), "top_score": round(picked[0].score, 3)}
+    try:
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_text(json.dumps(
+            {"value": value, "images": [str(p) for p in paths], "hint": hint},
+            ensure_ascii=False, default=_plain))
+    except (OSError, TypeError):
+        pass
+    return ToolResult(value=value, images=paths, reliability=0.7,
+                      backend="worst_loci", hint=hint)
 
 
 def paired_loci(a: VideoHandle, b: VideoHandle, out_dir: Path, *, k: int = 3,
