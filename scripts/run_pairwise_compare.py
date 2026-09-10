@@ -178,6 +178,14 @@ def main() -> int:
     print(f"  非平局方向准确率     {nt/max(1,len(dec)):6.1%}   n={len(dec)}/{len(nontie)}")
     print(f"  预测平局率 {pred_tie:.1%} vs 人评 {tie_rate:.1%}"
           f"   ·  顺序翻转(位置偏置) {flip}/{len(ok)}")
+    # Side-A rate against the human base rate. A judge that answers by position
+    # rather than content shows up here before it shows up in accuracy: an
+    # earlier run read 61.1% direction accuracy while picking A on 74% of pairs
+    # against a 37% human base rate.
+    a_pred = sum(1 for v in ok.values() if v["winner"] == "a")
+    a_true = sum(1 for v in ok.values() if truth(v["label"]) == "a")
+    print(f"  选A率 {a_pred/max(1,len(ok)):.1%} vs 人评A侧 {a_true/max(1,len(ok)):.1%}"
+          f"   ·  可判定 {len(dec)}/{len(ok)}")
 
     # Bradley-Terry over the model's own comparisons -> a point-wise scale
     rowmap = {r["pair_id"]: r for r in pairs}

@@ -45,31 +45,27 @@ def aligned_pair(a: VideoHandle, b: VideoHandle, out_dir: Path, *, n: int = 16,
     # Rows of `cols`, A block above B block, so a column still lines the two
     # clips up at the same moment when the strip wraps.
     c = cols or min(len(row_a), 8)
-    img = _tile(_interleave_rows(row_a, row_b, c), c)
-    p = _write(out_dir / tag, f"{tag}_{a.path.stem}__{b.path.stem}"[:120], img)
+    # One image per A/B row pair rather than one tall tile. A tile grows in both
+    # directions as n grows, and the encoder resizes it to a fixed budget, so a
+    # 32-frame single tile hands the model each frame at a third of the pixels a
+    # 8-frame tile does. Chunking keeps pixels-per-frame constant, so a
+    # frame-count comparison measures temporal coverage and not resolution.
+    paths = []
+    for k in range(0, len(row_a), c):
+        cells = row_a[k:k + c] + row_b[k:k + c]
+        img = _tile(cells, c)
+        stem = f"{tag}_{a.path.stem}__{b.path.stem}"[:112] + f"_p{k // c}"
+        paths.append(_write(out_dir / tag, stem, img))
     return ToolResult(
-        value={"n": n, "a_indices": ia, "b_indices": ib,
+        value={"n": n, "a_indices": ia, "b_indices": ib, "n_images": len(paths),
                "a_duration": round(a.duration_s, 2),
                "b_duration": round(b.duration_s, 2)},
-        images=[p], reliability=1.0, backend="aligned_pair",
+        images=paths, reliability=1.0, backend="aligned_pair",
         hint=("上排是视频 A,下排是视频 B,两排按**相同的时间比例**采样并标注了时间戳,"
               "所以同一列是两段视频的同一时刻。\n"
+              "若给了多张这样的图,它们是**按时间先后**接续的同一对视频,请连起来看。\n"
               "请逐列对比,判断哪一段的运动更合理。"),
     )
-
-
-def _interleave_rows(row_a, row_b, cols):
-    """Lay A and B out so vertically adjacent cells are the same timestamp.
-
-    With more frames than fit on one line the strip has to wrap, and a naive
-    concatenation would put A's later frames above B's earlier ones -- the
-    column alignment that makes the view readable would silently break.
-    """
-    out = []
-    for i in range(0, len(row_a), cols):
-        out += row_a[i:i + cols]
-        out += row_b[i:i + cols]
-    return out
 
 
 def motion_pair(a: VideoHandle, b: VideoHandle, out_dir: Path, *,
