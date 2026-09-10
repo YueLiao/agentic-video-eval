@@ -33,7 +33,7 @@ import json
 import os
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -83,6 +83,22 @@ PROMPT = """下面是这处可疑画面,已裁剪放大,每张图是相邻的两
 输出 JSON:{"observed":"...","verdict":"normal"|"broken"|"unclear",
  "severity":"轻微"|"明显"|"严重"|null,"what":"..."|null}"""
 
+def _render(rel: str, out_dir, k: int):
+    """Loci for one clip. Content-addressed, so a second call is a cache hit."""
+    import cv2
+    cv2.setNumThreads(1)
+    return worst_loci(VideoHandle(os.path.join(ROOT, rel)), Path(out_dir), k=k)
+
+
+def _render_job(job):
+    rel, out_dir, k = job
+    try:
+        r = _render(rel, out_dir, k)
+        return rel, len(r.images)
+    except Exception:  # noqa: BLE001
+        return rel, 0
+
+
 SEV = {"轻微": 1.0, "明显": 2.0, "严重": 3.0}
 
 # A binary broken/normal verdict throws the gradation away: on 1220 dev seed
@@ -123,7 +139,10 @@ def main() -> int:
     ap.add_argument("--n", type=int, default=0,
                     help="0 = all pairs; otherwise a label-stratified subsample")
     ap.add_argument("--out", required=True)
-    ap.add_argument("--workers", type=int, default=10)
+    ap.add_argument("--workers", type=int, default=10,
+                    help="concurrent VLM requests")
+    ap.add_argument("--render-workers", type=int, default=24,
+                    help="processes for the CPU-bound locus rendering")
     ap.add_argument("--endpoints", nargs="*",
                     default=["http://127.0.0.1:8005/v1",
                              "http://127.0.0.1:8006/v1"])
@@ -165,7 +184,7 @@ def main() -> int:
         vlm = vlms[i % len(vlms)]
         try:
             v = VideoHandle(os.path.join(ROOT, rel))
-            res = worst_loci(v, out / "loci", k=args.k)
+            res = _render(rel, out / "loci", args.k)
             if not res.images:
                 # No locus is itself evidence, and it is not the same as clean.
                 return rel, {"loci": [], "n_loci": 0, "n_broken": 0,
@@ -210,6 +229,26 @@ def main() -> int:
             return rel, {"error": f"{type(e).__name__}: {e}"[:110]}
 
     todo = [(i, v) for i, v in enumerate(vids) if v not in done]
+    # Render every clip's loci first, in processes, before any VLM call.
+    #
+    # Both used to share one thread pool, and the optical flow behind
+    # worst_loci is CPU-bound Python that holds the GIL -- so ten "concurrent"
+    # workers put exactly one request in flight. Measured on the qwen endpoint:
+    # the server reported `Running: 1 reqs` at 1.3% KV-cache use throughout,
+    # while a direct benchmark of the same endpoint reached 1.62 req/s at
+    # concurrency 8 against 0.22 at concurrency 1. The GPU was idle behind a
+    # client-side queue, and no server-side setting could have fixed it.
+    if todo:
+        pend = [rel for _i, rel in todo]
+        print(f"  预渲染 {len(pend)} 条的可疑处(进程池) ...")
+        t0 = time.time()
+        with ProcessPoolExecutor(max_workers=args.render_workers) as ex:
+            for n, _ in enumerate(ex.map(_render_job,
+                                         [(rel, str(out / "loci"), args.k)
+                                          for rel in pend], chunksize=4), 1):
+                if n % 200 == 0:
+                    print(f"    {n}/{len(pend)}  {time.time()-t0:.0f}s")
+        print(f"  预渲染完成 {time.time()-t0:.0f}s")
     if todo:
         rel0, r0 = one(todo[0])
         if r0.get("error"):
