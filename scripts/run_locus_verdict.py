@@ -120,6 +120,8 @@ def main() -> int:
     ap.add_argument("--split", default="dev")
     ap.add_argument("--family", default="seed")
     ap.add_argument("--k", type=int, default=3)
+    ap.add_argument("--n", type=int, default=0,
+                    help="0 = all pairs; otherwise a label-stratified subsample")
     ap.add_argument("--out", required=True)
     ap.add_argument("--workers", type=int, default=10)
     ap.add_argument("--endpoints", nargs="*",
@@ -134,6 +136,18 @@ def main() -> int:
 
     rows = [r for r in csv.DictReader(open(f"{R012}/{args.split}.csv"))
             if not args.family or r["family"] == args.family]
+    if args.n:
+        import random
+        rng = random.Random(11)
+        by: dict[str, list] = {}
+        for r in rows:
+            by.setdefault(r["MQ"], []).append(r)
+        sub = []
+        for lab, g in by.items():
+            sub += rng.sample(g, min(max(1, round(args.n * len(g) / len(rows))),
+                                     len(g)))
+        rng.shuffle(sub)
+        rows = sub[:args.n]
     vids = sorted({r[k] for r in rows for k in ("path_A", "path_B")})
     print(f"{args.split}/{args.family}: {len(rows)} 对, {len(vids)} 条视频 · "
           f"{len(args.endpoints)} 个端点")

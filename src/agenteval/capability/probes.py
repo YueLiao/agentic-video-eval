@@ -26,6 +26,7 @@ import json
 import statistics
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Callable, Sequence
 
 import numpy as np
@@ -312,8 +313,65 @@ def probe_refusal_to_invent(vlm: VLMClient) -> ProbeResult:
                        elapsed_s=time.time() - t0)
 
 
+def probe_image_budget(vlm: VLMClient) -> ProbeResult:
+    """How the deployment spends pixels: fixed token budget, or native size?
+
+    This decides evidence *layout*, and getting it wrong silently wastes every
+    round of work built on top. Two deployments measured here differ completely:
+
+      gemma-4-31b   max_soft_tokens 280, pooling 3, patch 16 -- a hard cap. The
+                    grid is fitted to the aspect ratio within 280 cells, so a
+                    wider image means fewer pixels per region. Adding frames to
+                    a strip shrinks every frame.
+      qwen3.8-27b   min 65536 / max 16777216 pixels, patch 16, merge 2 -- images
+                    are kept at native size up to 16MP. Adding frames costs
+                    tokens and latency, not resolution: the same 1542x768
+                    evidence ran about 13x slower per call.
+
+    So "give the model more evidence" is a different trade on each, and a
+    harness that means to be model-agnostic has to measure this rather than
+    assume it. The probe reads it off the deployment's own processor config
+    where that is reachable, and otherwise infers a floor empirically by asking
+    the same question of one image at growing widths.
+    """
+    t0 = time.time()
+    detail: list[str] = []
+    kind, budget = "unknown", None
+    try:
+        import requests
+        r = requests.get(vlm.base_url.rstrip("/") + "/models", timeout=10)
+        root = (r.json().get("data") or [{}])[0].get("root")
+    except Exception:  # noqa: BLE001
+        root = None
+    if root:
+        for name in ("processor_config.json", "preprocessor_config.json"):
+            p = Path(root) / name
+            if not p.exists():
+                continue
+            try:
+                cfg = json.loads(p.read_text())
+            except Exception:  # noqa: BLE001
+                continue
+            ip = cfg.get("image_processor", cfg)
+            if ip.get("max_soft_tokens"):
+                kind, budget = "token_capped", int(ip["max_soft_tokens"])
+                px = int(ip.get("patch_size", 16)) * int(ip.get("pooling_kernel_size", 1))
+                detail.append(f"{name}: 硬上限 {budget} token, 每单元 {px}px")
+                break
+            size = ip.get("size") or {}
+            if size.get("longest_edge"):
+                kind, budget = "native_capped", int(size["longest_edge"])
+                detail.append(f"{name}: 最多 {budget} 像素, 原生保留")
+                break
+    return ProbeResult("image_budget", kind != "unknown", value=kind,
+                       detail=(" · ".join(detail) or "无法从部署读到图像处理配置, "
+                               "证据版式应按最保守的固定预算假设") +
+                              " [部署]",
+                       elapsed_s=time.time() - t0)
+
+
 PROBES: tuple[Callable[[VLMClient], ProbeResult], ...] = (
     probe_schema, probe_max_images, probe_counting, probe_grounding,
     probe_temporal_order, probe_fine_detail, probe_self_consistency,
-    probe_instruction_depth, probe_refusal_to_invent,
+    probe_instruction_depth, probe_refusal_to_invent, probe_image_budget,
 )
