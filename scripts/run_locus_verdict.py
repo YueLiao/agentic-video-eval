@@ -143,6 +143,11 @@ def main() -> int:
                     help="concurrent VLM requests")
     ap.add_argument("--render-workers", type=int, default=24,
                     help="processes for the CPU-bound locus rendering")
+    ap.add_argument("--loci-dir", default=None,
+                    help="share rendered loci with another run. The evidence "
+                         "does not depend on the judge, so two models compared "
+                         "this way see byte-identical images, and the second "
+                         "run skips the render entirely.")
     ap.add_argument("--endpoints", nargs="*",
                     default=["http://127.0.0.1:8005/v1",
                              "http://127.0.0.1:8006/v1"])
@@ -174,6 +179,7 @@ def main() -> int:
     vlms = [VLMClient(model=args.model, base_url=ep, max_tokens=700,
                       timeout_s=300, cache_dir=out / "llm_cache")
             for ep in args.endpoints]
+    loci_dir = Path(args.loci_dir) if args.loci_dir else out / "loci"
     cache_p = out / "clips.json"
     done = json.loads(cache_p.read_text()) if cache_p.exists() else {}
 
@@ -184,7 +190,7 @@ def main() -> int:
         vlm = vlms[i % len(vlms)]
         try:
             v = VideoHandle(os.path.join(ROOT, rel))
-            res = _render(rel, out / "loci", args.k)
+            res = _render(rel, loci_dir, args.k)
             if not res.images:
                 # No locus is itself evidence, and it is not the same as clean.
                 return rel, {"loci": [], "n_loci": 0, "n_broken": 0,
@@ -244,7 +250,7 @@ def main() -> int:
         t0 = time.time()
         with ProcessPoolExecutor(max_workers=args.render_workers) as ex:
             for n, _ in enumerate(ex.map(_render_job,
-                                         [(rel, str(out / "loci"), args.k)
+                                         [(rel, str(loci_dir), args.k)
                                           for rel in pend], chunksize=4), 1):
                 if n % 200 == 0:
                     print(f"    {n}/{len(pend)}  {time.time()-t0:.0f}s")
