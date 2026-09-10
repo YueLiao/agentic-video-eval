@@ -150,8 +150,22 @@ def _decode_work(video: str, max_frames: int | None = None) -> tuple[np.ndarray,
 # ---- the signal maps -----------------------------------------------------
 
 def compute_maps(video: str, *, max_frames: int | None = None,
-                 grid: tuple[int, int] = GRID) -> dict[str, np.ndarray]:
-    """Return {signal_name: (T-1, GY, GX) float32 robust-z map}."""
+                 grid: tuple[int, int] = GRID,
+                 raw: bool = False) -> dict[str, np.ndarray]:
+    """Return {signal_name: (T-1, GY, GX) float32 map}.
+
+    By default every map is exceedance-normalized, which is a *within-video*
+    rank transform: it answers "how unusual is this tile for this clip", which
+    is the right question for fusing signals and locating loci, and destroys all
+    cross-video information doing it. Measured: the p99 of every normalized
+    signal was 1.989 on all 200 clips of a benchmark sample -- identical to
+    three decimals, because a rank statistic of a fixed-size map is a constant.
+
+    So a score built on the normalized maps can rank moments inside one clip and
+    can never say one clip is worse than another. `raw=True` returns the
+    magnitudes before that transform, which is what cross-video comparison and
+    any point-wise scale need.
+    """
     import cv2
 
     gray, small, _h0, _w0 = _decode_work(video, max_frames)
@@ -253,7 +267,7 @@ def compute_maps(video: str, *, max_frames: int | None = None,
     ref = np.maximum(np.maximum(local, med), 1e-3)
     maps["freeze"] = np.clip(1.0 - change_energy / ref, 0.0, 1.0).astype(np.float32)
 
-    return {k: _exceedance(v) for k, v in maps.items()}
+    return maps if raw else {k: _exceedance(v) for k, v in maps.items()}
 
 
 def fuse(maps: dict[str, np.ndarray],
