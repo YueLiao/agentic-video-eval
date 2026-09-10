@@ -3,9 +3,11 @@
 #
 #   bash scripts/serve_vlm.sh [MODEL_PATH] [PORT] [GPUS]
 #
-# The multimodal limit matters: skills send up to `Skill.max_images` images in
-# one call (14 for the ORDERED motion skills), and a server started with the
-# default cap rejects those requests outright rather than degrading.
+# Context and image caps are deployment choices, not model limits, and the first
+# deployment got them badly wrong: this model is 256K-native and was served at
+# 32K with an image cap of 16, so motion quality was being judged from six
+# frames at 300px. That ceiling was then read as a property of the model.
+# Override with MAX_LEN / MAX_IMG.
 set -euo pipefail
 MODEL="${1:-/pub/evaluation_group/yue/models/gemma-4-31b-it}"
 PORT="${2:-8005}"
@@ -20,6 +22,6 @@ CUDA_VISIBLE_DEVICES="$GPUS" "$VLLM" serve "$MODEL" \
   --port "$PORT" \
   --tensor-parallel-size "$TP" \
   --gpu-memory-utilization 0.90 \
-  --max-model-len 32768 \
-  --limit-mm-per-prompt '{"image":16}' \
+  --max-model-len "${MAX_LEN:-131072}" \
+  --limit-mm-per-prompt "{\"image\":${MAX_IMG:-48}}" \
   --trust-remote-code

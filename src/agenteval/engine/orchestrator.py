@@ -104,11 +104,22 @@ def evaluate(video_path: str | Path, condition: dict[str, Any],
 
     With more than one phase the whole skill pass is repeated with uniform
     sampling shifted, and only findings that recur across a majority of phases
-    are kept. That is not redundancy: measured on three phases of the same clips,
-    shifting which frames get sampled changed every aspect carrying signal, with
-    noise exceeding between-model signal on all of them, and the overall ranking
-    took three different orders in three runs. A defect that appears at one phase
-    and not the others was a property of the sampling, not of the video.
+    are kept.
+
+    **Off by default, because the control run says it removes signal.** Against
+    human preference labels on identical pairs, three-phase consensus scored
+    36.8% where a single pass scored 50.0%, and it left 44% fewer pairs
+    decidable while discarding 35% of findings.
+
+    That is the architecture contradicting itself. Consensus keeps only findings
+    that recur across sampling phases, but generation defects are *transient* --
+    which is the premise the suspicion map is built on. A defect visible under
+    one sampling and not another is the normal case here, not an artifact, so
+    the majority rule filters out precisely the class of problem this system
+    exists to catch.
+
+    It remains available for stability work, where reproducibility matters more
+    than recall, but it should not be on when accuracy is the goal.
     """
     if len(phases) > 1:
         return _evaluate_multiphase(

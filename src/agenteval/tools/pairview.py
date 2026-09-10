@@ -23,8 +23,9 @@ from agenteval.tools.base import ToolResult
 from agenteval.tools.renders import _label, _resize_side, _tile, _write
 
 
-def aligned_pair(a: VideoHandle, b: VideoHandle, out_dir: Path, *, n: int = 6,
-                 side: int = 300, tag: str = "pair") -> ToolResult:
+def aligned_pair(a: VideoHandle, b: VideoHandle, out_dir: Path, *, n: int = 16,
+                 side: int = 400, tag: str = "pair", cols: int | None = None
+                 ) -> ToolResult:
     """Both clips at matched normalized timestamps, stacked A over B.
 
     Matched by fraction of duration rather than frame index, since the two clips
@@ -41,7 +42,10 @@ def aligned_pair(a: VideoHandle, b: VideoHandle, out_dir: Path, *, n: int = 6,
              for i, f in zip(ia, fa)]
     row_b = [_label(_resize_side(f, side), f"B t={i/fps_b:.1f}s")
              for i, f in zip(ib, fb)]
-    img = _tile(row_a + row_b, len(row_a))
+    # Rows of `cols`, A block above B block, so a column still lines the two
+    # clips up at the same moment when the strip wraps.
+    c = cols or min(len(row_a), 8)
+    img = _tile(_interleave_rows(row_a, row_b, c), c)
     p = _write(out_dir / tag, f"{tag}_{a.path.stem}__{b.path.stem}"[:120], img)
     return ToolResult(
         value={"n": n, "a_indices": ia, "b_indices": ib,
@@ -51,6 +55,63 @@ def aligned_pair(a: VideoHandle, b: VideoHandle, out_dir: Path, *, n: int = 6,
         hint=("上排是视频 A,下排是视频 B,两排按**相同的时间比例**采样并标注了时间戳,"
               "所以同一列是两段视频的同一时刻。\n"
               "请逐列对比,判断哪一段的运动更合理。"),
+    )
+
+
+def _interleave_rows(row_a, row_b, cols):
+    """Lay A and B out so vertically adjacent cells are the same timestamp.
+
+    With more frames than fit on one line the strip has to wrap, and a naive
+    concatenation would put A's later frames above B's earlier ones -- the
+    column alignment that makes the view readable would silently break.
+    """
+    out = []
+    for i in range(0, len(row_a), cols):
+        out += row_a[i:i + cols]
+        out += row_b[i:i + cols]
+    return out
+
+
+def motion_pair(a: VideoHandle, b: VideoHandle, out_dir: Path, *,
+                tag: str = "motionpair") -> ToolResult:
+    """Speed and acceleration curves for both clips on shared axes.
+
+    Judging motion from sampled stills asks the model to infer rate from
+    evidence that does not contain it: sampling is exactly what destroys timing.
+    A stall is a trough, a jump is a spike, judder is high-frequency ripple --
+    shapes that are visible in a plot and invisible in a grid of frames.
+    """
+    import cv2
+    import numpy as np
+    from agenteval.tools.renders import _plot, _write as _w
+
+    series = {}
+    for name, v in (("A", a), ("B", b)):
+        idx = list(range(0, v.total))
+        g = v.read_gray(idx, max_side=192)
+        if len(g) < 3:
+            continue
+        mags = []
+        for x, y in zip(g, g[1:]):
+            fl = cv2.calcOpticalFlowFarneback(x, y, None, 0.5, 2, 13, 2, 5, 1.1, 0)
+            mags.append(float(np.hypot(fl[..., 0], fl[..., 1]).mean()))
+        # resample onto a common 0-100% axis so two clips of different length
+        # and fps are comparable along the same horizontal
+        m = np.asarray(mags, np.float64)
+        xs = np.linspace(0, 1, len(m))
+        series[f"{name} speed"] = np.interp(np.linspace(0, 1, 100), xs, m).tolist()
+    if not series:
+        return ToolResult(value={"error": "too few frames"}, reliability=0.0)
+    img = _plot(series, w=760, h=280,
+                title="global motion magnitude (x = 0-100% of clip)")
+    p = _w(out_dir / tag, f"{tag}_{a.path.stem}__{b.path.stem}"[:120], img)
+    return ToolResult(
+        value={"n_points": 100}, images=[p], reliability=0.75,
+        backend="motion_pair",
+        hint=("两段视频的全局运动幅度曲线,横轴已归一化到片长的 0-100%,所以可直接对比。\n"
+              "读法:深谷=接近静止(卡顿或本就静止);尖峰=速度突变;高频锯齿=抖动不平滑;"
+              "整体偏低=运动幅度不足。\n"
+              "**曲线只描述运动的时间结构,不能判断动作是否自然**——自然度要看帧。"),
     )
 
 

@@ -34,7 +34,7 @@ from agenteval.llm import modes                                # noqa: E402
 from agenteval.llm.client import ImageRef, VLMClient           # noqa: E402
 from agenteval.media.clip import VideoHandle                   # noqa: E402
 from agenteval.scoring.bradley_terry import agreement, from_labels  # noqa: E402
-from agenteval.tools.pairview import aligned_pair              # noqa: E402
+from agenteval.tools.pairview import aligned_pair, motion_pair  # noqa: E402
 
 ROOT = "/pub/evaluation_group/cy/rm_videos"
 R012 = ("/pub/evaluation_group/cy/mq_promptgen/pairing/review_results/"
@@ -83,7 +83,9 @@ def main() -> int:
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--out", required=True)
     ap.add_argument("--workers", type=int, default=6)
-    ap.add_argument("--frames", type=int, default=6)
+    ap.add_argument("--frames", type=int, default=16)
+    ap.add_argument("--motion-curves", action="store_true",
+                    help="也给出两段视频的运动曲线对照")
     ap.add_argument("--no-swap", action="store_true",
                     help="skip the order-swap check (halves cost)")
     args = ap.parse_args()
@@ -109,8 +111,15 @@ def main() -> int:
             view = aligned_pair(a, b, out / "views", n=args.frames)
             if not view.images:
                 return pid, {"error": "no view"}
-            imgs = [ImageRef(path=p, caption="A/B 对照") for p in view.images]
-            obs = modes.compare(vlm, question=QUESTION, images=imgs,
+            imgs = [ImageRef(path=p, caption="A/B 逐时刻对照") for p in view.images]
+            note = view.hint
+            if args.motion_curves:
+                mv = motion_pair(a, b, out / "views")
+                if mv.images:
+                    imgs += [ImageRef(path=p, caption="A/B 运动曲线")
+                             for p in mv.images]
+                    note += "\n\n" + mv.hint
+            obs = modes.compare(vlm, question=QUESTION + "\n\n" + note, images=imgs,
                                 system=SYSTEM, tag=f"cmp/{pid}",
                                 n_a=0 if args.no_swap else len(imgs) // 2,
                                 swap_check=not args.no_swap)
