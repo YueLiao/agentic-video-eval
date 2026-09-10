@@ -16,6 +16,16 @@ A signal that does not is one the judge cannot be blamed for ignoring.
 """
 from __future__ import annotations
 
+import os as _os
+
+# Every worker is one video, so the parallelism is already at the process level.
+# Left alone, each of them starts 64 BLAS threads and OpenCV starts as many
+# more; at 32 workers that exhausts the process limit and the failure surfaces
+# as silent decode errors in *other* jobs on the machine, not as an error here.
+for _v in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS",
+           "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+    _os.environ.setdefault(_v, "1")
+
 import argparse
 import csv
 import json
@@ -41,7 +51,9 @@ BETTER_IS = {"mc_residual": -1, "flow_anomaly": -1, "softness": -1, "crawl": -1,
 
 
 def features(path: str) -> dict:
+    import cv2
     import numpy as np
+    cv2.setNumThreads(1)
     from agenteval.signals.suspicion import compute_maps, fuse
     try:
         # raw, not exceedance-normalized: the normalized map is a within-video
@@ -58,7 +70,6 @@ def features(path: str) -> dict:
     out["fused_max"] = float(f.max())
     out["fused_mean"] = float(f.mean())
 
-    import cv2
     cap = cv2.VideoCapture(path)
     prev, mags = None, []
     while len(mags) < 63:
