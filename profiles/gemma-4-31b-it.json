@@ -1,7 +1,7 @@
 {
  "model": "gemma-4-31b-it",
  "endpoint": "http://127.0.0.1:8005/v1",
- "probed_at": 1789021279.1793373,
+ "probed_at": 1789120776.262906,
  "tier": "strong",
  "derived": {
   "max_images": 48,
@@ -23,7 +23,7 @@
    "passed": true,
    "value": 1,
    "detail": "attempts=1 parsed={'a': {'b': [1, 2, 3]}, 'c': {'d': {'e': 'x'}}, 'f': True}",
-   "elapsed_s": 0.9,
+   "elapsed_s": 11.2,
    "is_deployment_limit": false
   },
   "max_images": {
@@ -31,7 +31,7 @@
    "passed": true,
    "value": 48,
    "detail": "至少到 48 张仍正确",
-   "elapsed_s": 9.6,
+   "elapsed_s": 20.7,
    "is_deployment_limit": true
   },
   "counting": {
@@ -39,7 +39,7 @@
    "passed": true,
    "value": 1.0,
    "detail": "3/3 正确 (n=[3, 5, 8])",
-   "elapsed_s": 1.4,
+   "elapsed_s": 11.7,
    "is_deployment_limit": false
   },
   "grounding": {
@@ -47,7 +47,7 @@
    "passed": true,
    "value": 0.861,
    "detail": "IoU=0.86 报告=[0.592, 0.194, 0.194, 0.194] 真值=[0.6, 0.2, 0.18, 0.18]",
-   "elapsed_s": 1.4,
+   "elapsed_s": 0.9,
    "is_deployment_limit": false
   },
   "temporal_order": {
@@ -62,7 +62,7 @@
     120
    ],
    "detail": "读出 [3, 17, 42, 58, 91, 120] 真值 [3, 17, 42, 58, 91, 120]",
-   "elapsed_s": 1.0,
+   "elapsed_s": 0.8,
    "is_deployment_limit": false
   },
   "fine_detail_floor": {
@@ -70,7 +70,7 @@
    "passed": true,
    "value": 448,
    "detail": "112px=6 224px=6 448px=ok → 最小可判读 448px",
-   "elapsed_s": 1.1,
+   "elapsed_s": 16.5,
    "is_deployment_limit": false
   },
   "self_consistency": {
@@ -78,7 +78,7 @@
    "passed": true,
    "value": 1.0,
    "detail": "5 次采样最高一致率 100% (['10%', '10%', '10%', '10%', '10%'])",
-   "elapsed_s": 2.3,
+   "elapsed_s": 6.9,
    "is_deployment_limit": false
   },
   "instruction_depth": {
@@ -86,7 +86,7 @@
    "passed": true,
    "value": "ZK7",
    "detail": "埋在 ~1300 字中段的约束 → 返回 'ZK7'",
-   "elapsed_s": 0.5,
+   "elapsed_s": 0.7,
    "is_deployment_limit": false
   },
   "refusal_to_invent": {
@@ -94,7 +94,26 @@
    "passed": true,
    "value": 0,
    "detail": "在纯色图上报了 0 条缺陷 (期望 0)",
-   "elapsed_s": 0.5,
+   "elapsed_s": 10.0,
+   "is_deployment_limit": false
+  },
+  "image_budget": {
+   "name": "image_budget",
+   "passed": true,
+   "value": "token_capped",
+   "detail": "processor_config.json: 硬上限 280 token, 每单元 48px [部署]",
+   "elapsed_s": 0.1,
+   "is_deployment_limit": false
+  },
+  "video_path": {
+   "name": "video_path",
+   "passed": true,
+   "value": [
+    70,
+    32
+   ],
+   "detail": "processor_config.json: 每帧 70 token × 32 帧 = 2240, 每单元 48px · 对比单图上限 280 token → video 预算是其 8 倍 [部署]",
+   "elapsed_s": 0.0,
    "is_deployment_limit": false
   }
  }

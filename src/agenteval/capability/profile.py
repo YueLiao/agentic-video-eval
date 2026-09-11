@@ -92,8 +92,30 @@ class CapabilityProfile:
         got = sum(1 for k in core if (self.results.get(k) and self.results[k].passed))
         return "strong" if got >= 5 else ("mid" if got >= 3 else "weak")
 
+    @property
+    def video_budget(self) -> tuple[int, int] | None:
+        r = self.results.get("video_path")
+        return tuple(r.value) if r and r.passed and r.value else None
+
+    @property
+    def image_budget_kind(self) -> str:
+        r = self.results.get("image_budget")
+        return str(r.value) if r and r.passed else "unknown"
+
     def evidence_policy(self) -> dict[str, Any]:
-        """What the executor should do when assembling an evidence bundle."""
+        """What the executor should do when assembling an evidence bundle.
+
+        `frames_via` is the decision that dominates every other one here, and
+        it is the one this repo got wrong for a whole day. A token-capped image
+        path spends a fixed budget however many frames are tiled into it, so
+        adding frames shrinks each of them -- eight, sixteen and thirty-two all
+        scored the same because each addition took resolution from the last. A
+        video path with a per-frame budget does not have that property, and it
+        is the only path that carries rate. On gemma-4 the two differ by eight
+        times the visual budget, and switching took pairwise direction accuracy
+        from 48-58% to 82.2%.
+        """
+        vb = self.video_budget
         return {
             "max_images": self.max_images,
             "zoom_px": max(self.detail_floor_px, 336),
@@ -102,6 +124,17 @@ class CapabilityProfile:
             "votes": self.votes_needed,
             "enforce_constraints_in_code": self.constraints_in_code,
             "require_clean_baseline": self.invents_defects,
+            # Whole clips when the deployment has a per-frame budget for them;
+            # tiles otherwise, and then the tile layout has to respect the cap.
+            "frames_via": "video" if vb else "image_tiles",
+            "video_frames": vb[1] if vb else 0,
+            "video_tokens_per_frame": vb[0] if vb else 0,
+            "image_budget": self.image_budget_kind,
+            # A fixed cap means more frames per image costs resolution; a
+            # native-size path means it costs latency instead.
+            "more_frames_costs": ("resolution"
+                                  if self.image_budget_kind == "token_capped"
+                                  else "latency"),
         }
 
     def techniques(self) -> list[str]:
@@ -151,6 +184,14 @@ class CapabilityProfile:
         rows.append(f"  能力等级: {self.tier}")
         rows.append(f"  证据策略: 单次最多 {pol['max_images']} 图 · 放大到 {pol['zoom_px']}px · "
                     f"框来自 {pol['boxes_from']} · 投票 {pol['votes']} 次")
+        if pol["frames_via"] == "video":
+            rows.append(f"  **帧的送法: video 通道** ({pol['video_frames']} 帧 × "
+                        f"{pol['video_tokens_per_frame']} token/帧 = "
+                        f"{pol['video_frames'] * pol['video_tokens_per_frame']}) "
+                        f"—— 不要把帧拼成图")
+        else:
+            rows.append(f"  帧的送法: 拼图(无 video 通道) · 图像预算 "
+                        f"{pol['image_budget']} · 多加帧的代价是{pol['more_frames_costs']}")
         rows.append(f"  filmstrip 可用: {'是' if pol['use_filmstrip'] else '否(改用顺序帧)'} · "
                     f"约束需代码兜底: {'是' if pol['enforce_constraints_in_code'] else '否'}")
         rows.append(f"  启用技术: {', '.join(self.techniques())}")

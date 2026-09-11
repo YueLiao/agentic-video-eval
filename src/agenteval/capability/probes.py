@@ -370,8 +370,65 @@ def probe_image_budget(vlm: VLMClient) -> ProbeResult:
                        elapsed_s=time.time() - t0)
 
 
+def probe_video_path(vlm: VLMClient) -> ProbeResult:
+    """Is there a video path, and what does it cost per frame?
+
+    This is the question that should be asked first and was asked last. Six
+    rounds of adding evidence inside the image interface moved nothing, because
+    gemma-4 spends at most 280 soft tokens on an image however many frames are
+    tiled into it -- so every extra frame shrank the others. Its video path
+    spends 70 per frame across 32 frames: eight times the visual budget, and the
+    only path that carries rate, which is most of what motion quality is and
+    exactly what sampling destroys. Switching to it took pairwise direction
+    accuracy from 48-58% to 82.2% and the order-flip rate from 53-65% to 22%.
+
+    A harness that means to be model-agnostic has to know, per deployment,
+    whether frames should be tiled into images or sent as video.
+    """
+    t0 = time.time()
+    detail: list[str] = []
+    per_frame = n_frames = None
+    try:
+        import requests
+        r = requests.get(vlm.base_url.rstrip("/") + "/models", timeout=10)
+        root = (r.json().get("data") or [{}])[0].get("root")
+    except Exception:  # noqa: BLE001
+        root = None
+    if root:
+        for name in ("processor_config.json", "preprocessor_config.json"):
+            f = Path(root) / name
+            if not f.exists():
+                continue
+            try:
+                cfg = json.loads(f.read_text())
+            except Exception:  # noqa: BLE001
+                continue
+            vp = cfg.get("video_processor")
+            if vp:
+                per_frame = vp.get("max_soft_tokens")
+                n_frames = vp.get("num_frames")
+                px = int(vp.get("patch_size", 16)) * int(
+                    vp.get("pooling_kernel_size", 1))
+                detail.append(
+                    f"{name}: 每帧 {per_frame} token × {n_frames} 帧 "
+                    f"= {(per_frame or 0) * (n_frames or 0)}, 每单元 {px}px")
+                ip = cfg.get("image_processor", {})
+                if ip.get("max_soft_tokens"):
+                    detail.append(f"对比单图上限 {ip['max_soft_tokens']} token "
+                                  f"→ video 预算是其 "
+                                  f"{(per_frame or 0) * (n_frames or 0) / ip['max_soft_tokens']:.0f} 倍")
+                break
+    ok = per_frame is not None
+    return ProbeResult(
+        "video_path", ok, value=(per_frame, n_frames) if ok else None,
+        detail=(" · ".join(detail) if detail else
+                "读不到 video_processor 配置;证据只能走图像接口, "
+                "拼图时每帧会被固定预算稀释") + " [部署]",
+        elapsed_s=time.time() - t0)
+
+
 PROBES: tuple[Callable[[VLMClient], ProbeResult], ...] = (
     probe_schema, probe_max_images, probe_counting, probe_grounding,
     probe_temporal_order, probe_fine_detail, probe_self_consistency,
-    probe_instruction_depth, probe_refusal_to_invent, probe_image_budget,
+    probe_instruction_depth, probe_refusal_to_invent, probe_image_budget, probe_video_path,
 )
