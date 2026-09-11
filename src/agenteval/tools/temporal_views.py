@@ -111,6 +111,16 @@ def space_time_slice(video: VideoHandle, out_dir: Path, *, n_lines: int = 3,
         meta.append({"kind": "col", "pos": round(c / width, 3)})
     p = _write(out_dir / tag,
                f"{tag}_{mode}_{video.path.stem}"[:110], _tile(panels, 1, gap=14))
+    # Also keep each panel alone. A measurement taken on the tiled composite
+    # treats the stack as one axis, but every panel carries its own time axis
+    # and two of them run horizontally -- read that way, an injected freeze came
+    # out with negative contrast, which is impossible. Validation reads a single
+    # panel; the model still receives the tile.
+    for m, panel in zip(meta, panels):
+        m["path"] = str(_write(
+            out_dir / tag / "panels",
+            f"{tag}_{mode}_{video.path.stem}_{m['kind']}{int(m['pos']*100)}"[:110],
+            panel))
     return ToolResult(
         value={"n_frames": len(frames), "lines": meta, "fps": video.fps,
                "mode": mode},
