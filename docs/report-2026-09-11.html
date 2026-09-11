@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="一天的视频运动质量评测实验记录:方案、与微调 RM 的分层头对头、六条被推翻的结论、四个静默故障。">
+<style>
+  :root{color-scheme:light dark}
+  body{margin:0;font:14px/1.6 system-ui,sans-serif}
+  img{max-width:100%}
+  [hidden]{display:none!important}
+</style>
+<title>视频运动质量评测 · 现场记录</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Noto+Sans+SC:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --paper:#faf8f4; --panel:#fffdfa; --ink:#17191c; --muted:#6f6a62;
+  --rule:#e4ded3; --rule-strong:#cdc5b6;
+  --ok:#1f6f5c; --bad:#a83a24; --weak:#8d7326; --accent:#1f5d7a;
+  --ok-bg:#e7f1ec; --bad-bg:#f7e8e4; --weak-bg:#f6efdc; --accent-bg:#e6eef3;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"Noto Sans SC",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  --serif:"Noto Serif SC",Georgia,"Songti SC",serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#15171a; --panel:#1c1f23; --ink:#e8e4dc; --muted:#9b948a;
+    --rule:#2c3036; --rule-strong:#3d434a;
+    --ok:#63b79c; --bad:#e0806a; --weak:#cfae59; --accent:#79b0cd;
+    --ok-bg:#1a2b26; --bad-bg:#2e1f1b; --weak-bg:#2b2518; --accent-bg:#1a262e;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#15171a; --panel:#1c1f23; --ink:#e8e4dc; --muted:#9b948a;
+  --rule:#2c3036; --rule-strong:#3d434a;
+  --ok:#63b79c; --bad:#e0806a; --weak:#cfae59; --accent:#79b0cd;
+  --ok-bg:#1a2b26; --bad-bg:#2e1f1b; --weak-bg:#2b2518; --accent-bg:#1a262e;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-weight:300;line-height:1.75;font-size:15px;margin:0;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:0 28px 120px}
+
+/* ---- masthead ---- */
+header{padding:64px 0 34px;border-bottom:2px solid var(--ink);margin-bottom:0}
+.kicker{font-family:var(--mono);font-size:11px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(30px,5vw,46px);
+  line-height:1.18;margin:0 0 16px;text-wrap:balance;letter-spacing:-.01em}
+.standfirst{font-size:17px;color:var(--muted);max-width:62ch;margin:0;font-weight:300}
+.meta{display:flex;flex-wrap:wrap;gap:22px;margin-top:26px;
+  font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.meta b{color:var(--ink);font-weight:600}
+
+/* ---- headline stat band ---- */
+.band{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));
+  gap:1px;background:var(--rule);border-bottom:1px solid var(--rule);margin-bottom:52px}
+.band>div{background:var(--panel);padding:20px 18px 18px}
+.band .n{font-family:var(--mono);font-size:27px;font-weight:600;
+  font-variant-numeric:tabular-nums;line-height:1.1;letter-spacing:-.02em}
+.band .lbl{font-size:12px;color:var(--muted);margin-top:7px;line-height:1.5}
+.band .sub{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-top:5px}
+
+/* ---- sections ---- */
+section{margin:0 0 58px;scroll-margin-top:20px}
+h2{font-family:var(--serif);font-weight:700;font-size:23px;margin:0 0 6px;
+  padding-top:34px;border-top:1px solid var(--rule-strong);display:flex;
+  align-items:baseline;gap:14px;letter-spacing:-.01em}
+h2 .num{font-family:var(--mono);font-size:12px;color:var(--muted);
+  font-weight:500;flex:none}
+h3{font-family:var(--serif);font-weight:500;font-size:16.5px;margin:34px 0 10px}
+p{max-width:66ch;margin:0 0 14px}
+.lede{color:var(--muted);max-width:66ch;margin:0 0 24px;font-size:15px}
+strong{font-weight:500;color:var(--ink)}
+code,.m{font-family:var(--mono);font-size:.9em;font-variant-numeric:tabular-nums}
+code{background:var(--accent-bg);padding:1px 5px;border-radius:2px}
+a{color:var(--accent)}
+
+/* ---- verdict chips ---- */
+.chip{display:inline-block;font-family:var(--mono);font-size:10px;
+  letter-spacing:.08em;padding:2px 7px;border-radius:2px;font-weight:600;
+  white-space:nowrap;vertical-align:1px}
+.c-ok{background:var(--ok-bg);color:var(--ok)}
+.c-bad{background:var(--bad-bg);color:var(--bad)}
+.c-weak{background:var(--weak-bg);color:var(--weak)}
+
+/* ---- tables ---- */
+.tw{overflow-x:auto;margin:20px 0 8px;border:1px solid var(--rule);
+  background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-family:var(--mono);
+  font-size:12.5px;font-variant-numeric:tabular-nums;min-width:540px}
+th{text-align:right;font-weight:600;color:var(--muted);padding:11px 13px;
+  border-bottom:1px solid var(--rule-strong);white-space:nowrap;font-size:11px;
+  letter-spacing:.04em}
+th:first-child,td:first-child{text-align:left}
+td{padding:9px 13px;border-bottom:1px solid var(--rule);text-align:right;
+  white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+.sans{font-family:var(--sans);font-weight:300;white-space:normal}
+.pos{color:var(--ok);font-weight:600}
+.neg{color:var(--bad);font-weight:600}
+.dim{color:var(--muted)}
+.hl{background:var(--ok-bg)}
+.hl td{font-weight:600}
+caption{caption-side:bottom;text-align:left;font-family:var(--sans);
+  font-size:12.5px;color:var(--muted);padding:12px 13px;font-weight:300;
+  line-height:1.6}
+
+/* ---- pipeline ---- */
+.pipe{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:1px;background:var(--rule);border:1px solid var(--rule);margin:22px 0}
+.pipe>div{background:var(--panel);padding:18px}
+.pipe h4{font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--accent);margin:0 0 9px;font-weight:600}
+.pipe p{font-size:13.5px;margin:0 0 8px;max-width:none}
+.pipe .why{font-size:12.5px;color:var(--muted);border-left:2px solid var(--rule-strong);
+  padding-left:11px;margin-top:11px}
+
+/* ---- callout ---- */
+.note{border-left:3px solid var(--accent);background:var(--accent-bg);
+  padding:16px 20px;margin:22px 0;font-size:14px}
+.note.warn{border-color:var(--bad);background:var(--bad-bg)}
+.note p{max-width:none;margin:0 0 9px}
+.note p:last-child{margin:0}
+.note .h{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;font-weight:600;color:var(--accent);margin-bottom:8px}
+.note.warn .h{color:var(--bad)}
+
+/* ---- bug ledger ---- */
+.bugs{margin:20px 0;border-top:1px solid var(--rule-strong)}
+.bug{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.3fr);
+  gap:26px;padding:17px 0;border-bottom:1px solid var(--rule)}
+.bug .sym{font-size:14px}
+.bug .sym b{display:block;font-weight:500;margin-bottom:4px}
+.bug .fix{font-size:13px;color:var(--muted)}
+.bug .fix::before{content:"→ ";font-family:var(--mono);color:var(--ok)}
+@media (max-width:640px){.bug{grid-template-columns:1fr;gap:8px}}
+
+ul{max-width:66ch;padding-left:20px;margin:0 0 14px}
+li{margin-bottom:7px}
+footer{border-top:2px solid var(--ink);padding-top:22px;margin-top:20px;
+  font-family:var(--mono);font-size:11.5px;color:var(--muted);
+  display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">agentic-video-eval · 现场记录 · 2026-09-10 → 09-11</div>
+  <h1>一天之内，从 61.1% 到 65.2%<br>以及为什么中间那些数字都不作数</h1>
+  <p class="standfirst">给生成视频的运动质量打分。六轮方法迭代全部无效，第七轮换了一个接口就成了。
+  这份记录同时列出成立的结论、被推翻的结论，和四个不报错却让数字全假的静默故障。</p>
+  <div class="meta">
+    <span>判官 <b>gemma-4-31b-it</b>（零训练，仅提示词）</span>
+    <span>对照 <b>cy/VideoAlign</b> 微调的 RM</span>
+    <span>指标 <b>METRICS.md §1 / §2</b></span>
+    <span>提交 <b>29</b></span>
+  </div>
+</header>
+
+<div class="band">
+  <div>
+    <div class="n">65.2<span style="font-size:15px">%</span></div>
+    <div class="lbl">总体方向准确率<br>对照：微调 RM 65.5%</div>
+    <div class="sub">n=322 · ±5 · 差距在噪声内</div>
+  </div>
+  <div>
+    <div class="n" style="color:var(--ok)">69.8<span style="font-size:15px">%</span></div>
+    <div class="lbl">seed 族（同模型不同采样）<br>对照：微调 RM 39.7%</div>
+    <div class="sub">n=63 · ±12 · <span class="pos">+30.1 成立</span></div>
+  </div>
+  <div>
+    <div class="n" style="color:var(--ok)">64.1<span style="font-size:15px">%</span></div>
+    <div class="lbl">爆冷集（先验按构造为 0%）<br>平凡基线均为 ~50%</div>
+    <div class="sub">n=529 · z=+6.48</div>
+  </div>
+  <div>
+    <div class="n">23<span style="font-size:15px">%</span></div>
+    <div class="lbl">顺序翻转率<br>换成 video 前：53–65%</div>
+    <div class="sub">判断终于建立在内容上</div>
+  </div>
+</div>
+
+<section>
+  <h2><span class="num">01</span>方案</h2>
+  <p class="lede">不是 agent 自由探索，是一条由能力探针决定形态的三段式流水线。每一段的分工都是被实验逼出来的，不是设计出来的。</p>
+
+  <h3>先探测，再决定证据怎么组织</h3>
+  <p>这是整个框架最上游、也是唯一一个<strong>不能靠调参补救</strong>的决策。探针从部署读出图像与视频的 token 预算，策略随之改变：</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>部署</th><th>图像预算</th><th>视频通道</th><th>帧的送法</th><th>多加一帧的代价</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>gemma-4-31b</td><td>280 token 硬上限</td><td>70×32 = 2240</td><td>video 通道</td><td class="sans">—</td></tr>
+        <tr><td>qwen3.8-27b</td><td>16.7M 像素原生</td><td class="dim">无</td><td>拼图</td><td class="sans neg">延迟（实测慢 13×）</td></tr>
+        <tr><td class="dim">若走 gemma 的拼图路径</td><td class="dim">280 共享</td><td class="dim">—</td><td class="dim">拼图</td><td class="sans neg">分辨率</td></tr>
+      </tbody>
+    </table>
+    <caption>同一套 skill 换个模型必须走不同路径。“多给模型一些证据”在固定 token 预算的部署上等于“让每帧更小”——这是六轮失败的根源，也是探针现在会自动回答的问题。</caption>
+  </div>
+
+  <h3>三段式</h3>
+  <div class="pipe">
+    <div>
+      <h4>① 定位 · CV，无模型</h4>
+      <p>suspicion 六路信号在<strong>全帧率</strong>上算（不采样），成对时两条片段<strong>联合归一化</strong>，提名 k 处可疑区域。</p>
+      <div class="why">信号只负责“往哪看”。让它直接判好坏，符号是反的——16.7%，低于随机：动得多的片段天然更可疑，而人评奖励动得多。</div>
+    </div>
+    <div>
+      <h4>② 呈现 · 版式即约束</h4>
+      <p>裁剪放大，相邻两帧一张图，每格 768px 源、有效 528px。版式由探针测出的 448px 可判读底线倒推。</p>
+      <div class="why">8 列条带每帧只剩 264px，2×2 拼 384px，只有 1×2 并排过线。渲染层不是装饰，它决定细节能不能活到模型眼前。</div>
+    </div>
+    <div>
+      <h4>③ 判定 · VLM，封闭问题</h4>
+      <p>整体运动走 video 通道成对比较（带强制交换检查）；局部结构走逐处判定 <code>normal/broken/unclear</code>，判据统一到<strong>拓扑变没变</strong>。</p>
+      <div class="why">开放式“哪段更好”一半判断经不起换边；“这一段有没有缺陷”55% 的对给出逐字相同答案。封闭问题它答得很好。</div>
+    </div>
+  </div>
+
+  <div class="note">
+    <div class="h">为什么输出天生是 point-wise 的</div>
+    <p>逐处判定是逐片独立的，<strong>结构上不可能有位置偏置</strong>；成对方向是分数之差的副产品，而不是反过来。这正是做 reward model 需要的形态——给一条从没和任何东西比较过的视频也能出分。</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">02</span>与微调 RM 的头对头</h2>
+  <p class="lede">同一批 499 对（bench p1）、同一个指标算法（METRICS.md §1，不许弃权）、两边都强制表态。总分持平，构成完全相反。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>切片</th><th>n</th><th>微调 RM</th><th>本方案</th><th>差</th><th>95%CI</th><th>判读</th></tr></thead>
+      <tbody>
+        <tr><td>overall</td><td>322</td><td>65.5</td><td>65.2</td><td class="dim">−0.3</td><td class="dim">±5</td><td class="sans dim">噪声内</td></tr>
+        <tr class="hl"><td>family seed</td><td>63</td><td>39.7</td><td>69.8</td><td class="pos">+30.1</td><td class="dim">±12</td><td class="sans"><span class="chip c-ok">成立</span></td></tr>
+        <tr><td>upset 爆冷</td><td>31</td><td>64.5</td><td>83.9</td><td class="pos">+19.4</td><td class="dim">±18</td><td class="sans"><span class="chip c-weak">勉强</span></td></tr>
+        <tr><td>ordercheck 顺风</td><td>155</td><td>79.4</td><td>62.6</td><td class="neg">−16.8</td><td class="dim">±8</td><td class="sans"><span class="chip c-ok">成立</span></td></tr>
+        <tr><td>family W-S</td><td>74</td><td>85.1</td><td>71.6</td><td class="neg">−13.5</td><td class="dim">±11</td><td class="sans"><span class="chip c-ok">成立</span></td></tr>
+        <tr><td>family W-M</td><td>39</td><td>94.9</td><td>82.1</td><td class="neg">−12.8</td><td class="dim">±16</td><td class="sans dim">噪声内</td></tr>
+        <tr><td>family M-S</td><td>73</td><td>58.9</td><td>52.1</td><td class="dim">−6.8</td><td class="dim">±11</td><td class="sans dim">两边都近随机</td></tr>
+        <tr><td>family S-S</td><td>56</td><td>53.6</td><td>51.8</td><td class="dim">−1.8</td><td class="dim">±13</td><td class="sans dim">两边都近随机</td></tr>
+      </tbody>
+    </table>
+    <caption>分界线正好是“生成器指纹有没有用”。指纹强的切片（W-S / 顺风）微调 RM 领先，指纹无用的切片（seed / 爆冷）本方案领先。两者在总分上恰好相抵。</caption>
+  </div>
+
+  <h3>第三方基线印证了这个分界</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>模型</th><th>overall</th><th>acc*</th><th>seed</th><th>upset</th><th>W-S</th><th>画像</th></tr></thead>
+      <tbody>
+        <tr><td>本地训练 · 候选主种子</td><td>65.5</td><td>47.1</td><td class="neg">39.7</td><td>64.5</td><td class="pos">85.1</td><td class="sans">认指纹</td></tr>
+        <tr><td>本地训练 · btt@2e-5</td><td>67.7</td><td>50.7</td><td>55.6</td><td class="neg">35.5</td><td class="pos">87.8</td><td class="sans">认指纹</td></tr>
+        <tr><td>官方 VideoReward</td><td class="neg">46.3</td><td>36.3</td><td class="pos">60.3</td><td class="pos">67.7</td><td class="neg">39.2</td><td class="sans">未见过这批指纹</td></tr>
+        <tr class="hl"><td>本方案 · video</td><td>65.2</td><td>46.9</td><td class="pos">69.8</td><td class="pos">83.9</td><td>71.6</td><td class="sans">看运动</td></tr>
+      </tbody>
+    </table>
+    <caption>官方 VideoReward 没在这条 benchmark 上训过，画像和本地训练的模型正好相反：总分低、W-S 低到 39.2（低于随机），但 seed 与爆冷都高。在这上面训练 = 学会认指纹。本方案在每个轴上都不差于它，同时总分追平本地训练的模型。</caption>
+  </div>
+
+  <div class="note">
+    <div class="h">对 reward model 而言，seed 那一行是唯一要紧的</div>
+    <p>单策略的 RL / BoN 在推理时喂进来的是<strong>同一个模型的不同采样</strong>——就是 seed 族。跨模型对在那个场景下是 OOD 的。微调 RM 在那里 <span class="m">39.7%</span>，<strong>低于随机</strong>；本方案 <span class="m">69.8%</span>。</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">03</span>为什么前六轮全部无效</h2>
+  <p class="lede">不是方法不够好，是接口用错了。而这件事被一个固定的 token 预算掩盖了整整一天。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>轮次</th><th>做法</th><th>结果</th><th>事后判明的原因</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td class="sans">8 / 16 / 32 帧扫描</td><td>48–58%</td><td class="sans">帧数涨，每帧像素跌（280 token 共享）</td></tr>
+        <tr><td>2</td><td class="sans">逐片十项缺陷清单</td><td class="dim">净贡献 0.0</td><td class="sans">55% 的对给出逐字相同答案</td></tr>
+        <tr><td>3</td><td class="sans">加时间证据（差分条 + 曲线）</td><td class="neg">−14 点</td><td class="sans">差分条也是 16 帧采样，同一个盲区</td></tr>
+        <tr><td>4</td><td class="sans">内容特征（骨长 / 对称 / 抖动）</td><td class="neg">−6.3</td><td class="sans">372 对拟合 33 维，过拟合</td></tr>
+        <tr><td>5</td><td class="sans">放大到 448px + 逐处判定</td><td>52.8–55.3%</td><td class="sans">符号修正了，但召回太低</td></tr>
+        <tr><td>6</td><td class="sans">k=3 → k=10 提高召回</td><td class="neg">57.1% → 50.0%</td><td class="sans">覆盖率翻倍，准确率掉到随机</td></tr>
+        <tr class="hl"><td>7</td><td class="sans">换 video 通道</td><td class="pos">82.2% / 翻转 22%</td><td class="sans">预算 8 倍，且唯一携带速率</td></tr>
+      </tbody>
+    </table>
+    <caption>前六轮的共同点：每一次“给模型更多东西”，都因为某个固定预算被稀释而失效。第七轮加的是<b>独立的通道</b>而不是同一次调用里的更多内容。</caption>
+  </div>
+
+  <div class="note warn">
+    <div class="h">一个本该最先问的问题</div>
+    <p>运动质量主要是<strong>速率</strong>问题，而抽样恰恰是毁掉速率的那一步。清单模式里“卡顿 / 打滑 / 速度 / 幅度”四项在 1220 条片段上报出率是 <span class="m">0%</span>——不是模型偷懒，是证据里根本没有答案。</p>
+    <p>教训已固化成探针：<strong>在优化怎么用一个接口之前，先确认用的是不是对的接口。</strong></p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">04</span>被推翻的结论</h2>
+  <p class="lede">全部来自本项目自己早先的报数。列在这里不是为了自省，是因为每一条都暴露了一类会重犯的错误。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>原结论</th><th>真相</th><th>错误类型</th></tr></thead>
+      <tbody>
+        <tr><td class="sans">加帧 +4.2 点，16 帧达 61.1%</td><td class="sans">位置偏置。模型 74% 选 A 侧，人评基准 37%</td><td class="sans"><span class="chip c-bad">对照被静默跳过</span></td></tr>
+        <tr><td class="sans">point-wise 模型 66.1%</td><td class="sans">口径错（弃权不进分母），实为 61.5%</td><td class="sans"><span class="chip c-bad">指标不合规</span></td></tr>
+        <tr><td class="sans">61.5% 是真实判别能力</td><td class="sans">主要是生成器指纹。档位先验单独就有 82%</td><td class="sans"><span class="chip c-bad">缺平凡基线</span></td></tr>
+        <tr><td class="sans">逐处判定 k=3 得 57.1%</td><td class="sans">样本增至 124 后掉到 50.0%</td><td class="sans"><span class="chip c-bad">小样本</span></td></tr>
+        <tr><td class="sans">seed 族是正确的评测靶子</td><td class="sans">3–5 名标注员 64% 判平局，人自己分不开</td><td class="sans"><span class="chip c-bad">靶子不可分</span></td></tr>
+        <tr><td class="sans">爆冷集 83.9%</td><td class="sans">n=31，CI [66%,100%]。稳健值是 64.1%（n=529）</td><td class="sans"><span class="chip c-weak">未标样本量</span></td></tr>
+      </tbody>
+    </table>
+    <caption>前两条与最后一条是同一个毛病的三种形态：<b>一个数字不和它的 n、它的平凡基线放在一起，就没有意义。</b></caption>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">05</span>四个静默故障</h2>
+  <p class="lede">共同点：不报错、照常出分、数字全假。它们比方法错误更危险，因为没有任何信号提示你去查。</p>
+
+  <div class="bugs">
+    <div class="bug">
+      <div class="sym"><b>交换检查被静默跳过</b>参数缺省时提前返回，位置偏置冒充成 61.1% 的准确率</div>
+      <div class="fix">拿不到交换方式就返回 <code>ok=False</code>，跳不过去</div>
+    </div>
+    <div class="bug">
+      <div class="sym"><b>200 条视频只写出 2 个文件</b>渲染文件名描述的是视图而不是片段，6 个 worker 互相覆盖</div>
+      <div class="fix">内容寻址：文件名带图像字节哈希，碰撞即缓存命中</div>
+    </div>
+    <div class="bug">
+      <div class="sym"><b>归一化删掉跨视频信息（咬了三次）</b>200 条视频信号 p99 全等于 1.989；三条无关视频 loci 峰值全等于 3.784</div>
+      <div class="fix">加 <code>raw=True</code>；成对时两条片段联合归一化</div>
+    </div>
+    <div class="bug">
+      <div class="sym"><b>线程爆炸在别人的作业里报错</b>32 worker × 64 BLAS 线程打爆进程数，表现为另一个作业的解码失败</div>
+      <div class="fix">环境变量钉死线程数 + <code>cv2.setNumThreads(1)</code></div>
+    </div>
+    <div class="bug">
+      <div class="sym"><b>GPU 在客户端队列后面空转</b>服务端 <code>Running: 1 reqs</code>、KV cache 1.3%，而并发 8 压测能到 1.62 req/s</div>
+      <div class="fix">CPU 预渲染走进程池，跑完再进线程池打 VLM</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">06</span>未解决</h2>
+  <ul>
+    <li><strong>S-S 与 M-S 仍是空白</strong>（51.8% / 52.1%）。同档不同模型的对，本方案和微调 RM 两边都接近随机。</li>
+    <li><strong>交换检查在 §1 口径下被惩罚</strong>（63.7% vs 强制表态 65.2%）。该口径不许弃权，被检出位置偏置的对必须硬猜，等于把“我不确定”变成随机。<code>d==0</code> 在官方函数、METRICS.md §1、trainer.py 三处有三种处理——对连续打分器无影响，对会弃权的判官有系统性影响。</li>
+    <li><strong>seed 族的标注天花板</strong>。3–5 名标注员 64% 判平局，强偏好仅 7%（21 对）。要在这个切片上继续往上，需要新标注而不是新方法。</li>
+    <li><strong>两条路线应当合并</strong>。强弱分界线正好是“指纹有没有用”，这是合并有效的直接依据，不需要新数据即可验证。</li>
+  </ul>
+</section>
+
+<footer>
+  <span>github.com/YueLiao/agentic-video-eval</span>
+  <span>指标口径 = cy/VideoAlign/mq_runs/METRICS.md §1 / §2（arXiv:2305.14324）</span>
+</footer>
+
+</div>
+
+</body>
+</html>
