@@ -134,7 +134,13 @@ GRADES = (10.0, 8.0, 6.0, 4.0, 2.0)
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", default="dev")
+    ap.add_argument("--splits", nargs="*", default=None,
+                    help="evaluate across several splits at once. The chain has "
+                         "no learned parameters, so it needs no train/test cut "
+                         "-- pooling every ladder pair takes n from 63 to 1158.")
     ap.add_argument("--family", default="seed")
+    ap.add_argument("--ladder-only", action="store_true")
+    ap.add_argument("--min-annotators", type=int, default=0)
     ap.add_argument("--k", type=int, default=3)
     ap.add_argument("--n", type=int, default=0,
                     help="0 = all pairs; otherwise a label-stratified subsample")
@@ -158,8 +164,21 @@ def main() -> int:
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
     sys.stdout.reconfigure(line_buffering=True)
 
-    rows = [r for r in csv.DictReader(open(f"{R012}/{args.split}.csv"))
-            if not args.family or r["family"] == args.family]
+    rows, seen = [], set()
+    for sp in (args.splits or [args.split]):
+        for r in csv.DictReader(open(f"{R012}/{sp}.csv")):
+            if r["pair_id"] in seen:
+                continue
+            if args.ladder_only:
+                if str(r.get("is_ladder")).lower() not in ("1", "true"):
+                    continue
+            elif args.family and r["family"] != args.family:
+                continue
+            if args.min_annotators and int(r.get("n_annotations") or 1) < args.min_annotators:
+                continue
+            seen.add(r["pair_id"])
+            r["_split"] = sp
+            rows.append(r)
     if args.n:
         import random
         rng = random.Random(11)
@@ -173,8 +192,9 @@ def main() -> int:
         rng.shuffle(sub)
         rows = sub[:args.n]
     vids = sorted({r[k] for r in rows for k in ("path_A", "path_B")})
-    print(f"{args.split}/{args.family}: {len(rows)} 对, {len(vids)} 条视频 · "
-          f"{len(args.endpoints)} 个端点")
+    tag_desc = "ladder" if args.ladder_only else args.family
+    print(f"{'+'.join(args.splits or [args.split])}/{tag_desc}: {len(rows)} 对, "
+          f"{len(vids)} 条视频 · {len(args.endpoints)} 个端点")
 
     vlms = [VLMClient(model=args.model, base_url=ep, max_tokens=700,
                       timeout_s=300, cache_dir=out / "llm_cache")
