@@ -59,7 +59,11 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--set", required=True)
     ap.add_argument("--variant", default="perceive",
-                    choices=list(VARIANTS) + ["two_step"])
+                    choices=list(VARIANTS) + ["two_step", "hybrid"])
+    ap.add_argument("--clean", action="store_true",
+                    help="ask the untouched clips instead. 85% detection means "
+                         "nothing without this: a judge that answers yes to "
+                         "everything scores the same.")
     ap.add_argument("--panels-only", action="store_true",
                     help="send the single row panel instead of the tile")
     ap.add_argument("--endpoint", default="http://127.0.0.1:8006/v1")
@@ -74,39 +78,55 @@ def main() -> int:
     print(f"{len(cases)} 例可用 · 变体 {args.variant} · "
           f"{'只发单面板' if args.panels_only else '发拼接图'}")
 
+    key = "xt_clean" if args.clean else "xt_inj"
+
+    def localise(c, want):
+        pick = None
+        for m in c["panels"]:
+            k = f"{'y' if m['kind'] == 'row' else 'x'}={int(m['pos'] * 100)}%"
+            if k in (want or ""):
+                pick = m
+                break
+        pick = pick or max(c["panels"], key=lambda m: m["kind"] == "row")
+        r = vlm.ask(system="只输出 JSON。", user=TWO_STEP_2,
+                    images=[ImageRef(path=Path(pick["path"]))],
+                    schema={"type": "object"}, tag=f"dbg/loc/{c['id']}")
+        q = r.parsed or {}
+        return [q.get("t_start"), q.get("t_end")]
+
     def one(c):
+        if args.variant == "hybrid":
+            # Detection on the tile, which finds 85%; localisation on the panel
+            # it names, which places 95% of what it finds. Each step keeps the
+            # half it is good at.
+            r1 = vlm.ask(system="只输出 JSON。", user=VARIANTS["perceive"],
+                         images=[ImageRef(path=Path(c[key]))],
+                         schema={"type": "object"}, tag=f"dbg/hy/{c['id']}")
+            p1 = r1.parsed or {}
+            if not p1.get("has_dark_band"):
+                return c, False, [None, None], str(p1.get("evidence") or "")[:80]
+            return c, True, localise(c, p1.get("which_panel")), \
+                str(p1.get("which_panel") or "")[:60]
         if args.variant == "two_step":
             # Detection on the tile (more panels, more chances) and localisation
             # on the single panel it names (coordinates are readable there):
             # measured, the tile finds 10/12 and places 5, one panel finds 4/12
             # and places 4. Splitting takes the better half of each.
             r1 = vlm.ask(system="只输出 JSON。", user=TWO_STEP_1,
-                         images=[ImageRef(path=Path(c["xt_inj"]))],
+                         images=[ImageRef(path=Path(c[key]))],
                          schema={"type": "object"}, tag=f"dbg/ts1/{c['id']}")
             p1 = r1.parsed or {}
             if not p1.get("has_dark_band"):
                 return c, False, [None, None], str(p1.get("which_panel") or "")[:80]
             want = str(p1.get("which_panel") or "")
-            pick = None
-            for m in c["panels"]:
-                key = f"{'y' if m['kind']=='row' else 'x'}={int(m['pos']*100)}%"
-                if key in want:
-                    pick = m
-                    break
-            pick = pick or max(c["panels"], key=lambda m: m["kind"] == "row")
-            r2 = vlm.ask(system="只输出 JSON。", user=TWO_STEP_2,
-                         images=[ImageRef(path=Path(pick["path"]))],
-                         schema={"type": "object"}, tag=f"dbg/ts2/{c['id']}")
-            p2 = r2.parsed or {}
-            return (c, True, [p2.get("t_start"), p2.get("t_end")],
-                    f"面板={want[:26]} {str(p2.get('evidence') or '')[:50]}")
+            return c, True, localise(c, want), f"面板={want[:40]}"
         note = VARIANTS[args.variant] or (c["hint_xt"] + "\n\n" +
                                           "这段视频有没有画面停住的区间?\n" + SCHEMA)
         if args.panels_only:
             best = max(c["panels"], key=lambda m: m["kind"] == "row")
             imgs = [ImageRef(path=Path(best["path"]))]
         else:
-            imgs = [ImageRef(path=Path(c["xt_inj"]))]
+            imgs = [ImageRef(path=Path(c[key]))]
         r = vlm.ask(system="只输出 JSON。", user=note, images=imgs,
                     schema={"type": "object"}, tag=f"dbg/{args.variant}/{c['id']}")
         p = r.parsed or {}
@@ -137,7 +157,9 @@ def main() -> int:
         if not has:
             print(f"        {why}")
     n = len(res)
-    print(f"\n  检出 {hit}/{n} = {hit/n:.0%} · 其中定位正确 {loc}/{max(1,hit)}")
+    label = "误报率(干净片段)" if args.clean else "检出率(注入片段)"
+    print(f"\n  {label} {hit}/{n} = {hit/n:.0%}"
+          + ("" if args.clean else f" · 其中定位正确 {loc}/{max(1,hit)}"))
     print("  ✓=检出且定位对 · ○=检出但位置错 · ✗=漏检")
     return 0
 
