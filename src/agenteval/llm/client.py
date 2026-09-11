@@ -68,6 +68,22 @@ class VLMResponse:
 
 
 @dataclass
+class VideoRef:
+    """A clip to send whole, rather than as sampled frames."""
+
+    path: Path
+    caption: str = ""
+
+    def data_url(self) -> str:
+        return ("data:video/mp4;base64,"
+                + base64.b64encode(Path(self.path).read_bytes()).decode())
+
+    def digest(self) -> str:
+        import hashlib
+        return hashlib.sha1(Path(self.path).read_bytes()).hexdigest()[:16]
+
+
+@dataclass
 class ImageRef:
     """An image to send. Either bytes (JPEG) or a path; caption is shown to the
     model so it can refer to a specific frame instead of "the third image"."""
@@ -175,6 +191,59 @@ class VLMClient:
             json.dumps(payload, ensure_ascii=False), encoding="utf-8")
 
     # ---- message encoding ----------------------------------------------
+    def _encode_video(self, system: str, user: str,
+                      parts: Sequence[object]) -> dict:
+        """Interleave videos and images in one request.
+
+        The video path is not a nicer wrapper around frames -- it is a different
+        token budget. gemma-4 spends at most 280 soft tokens on an image however
+        many frames are tiled into it, and 70 per frame across 32 frames on a
+        video: 2240 in total, and about 400px of effective resolution per frame
+        against the 264px an eight-column strip leaves. It is also the only path
+        that carries rate, which is most of what motion quality is and exactly
+        what sampling destroys.
+        """
+        content: list[dict] = []
+        for part in parts:
+            if isinstance(part, str):
+                content.append({"type": "text", "text": part})
+            elif isinstance(part, VideoRef):
+                content.append({"type": "video_url",
+                                "video_url": {"url": part.data_url()}})
+            else:
+                if part.caption:
+                    content.append({"type": "text", "text": part.caption})
+                content.append({"type": "image_url",
+                                "image_url": {"url": part.data_url()}})
+        msgs = []
+        if system:
+            msgs.append({"role": "system", "content": system})
+        if user:
+            content.append({"type": "text", "text": user})
+        msgs.append({"role": "user", "content": content})
+        return {"model": self.model, "messages": msgs,
+                "max_tokens": self.max_tokens, "temperature": self.temperature}
+
+    def ask_multimodal(self, *, system: str, user: str,
+                       parts: Sequence[object],
+                       schema: dict[str, Any] | None = None,
+                       tag: str = "") -> "VLMResponse":
+        """`ask` for a request that mixes videos, images and text in order."""
+        key = self._key(system, user + "|".join(
+            p if isinstance(p, str) else p.digest() for p in parts), (), schema)
+        hit = self._cache_get(key)
+        if hit is not None:
+            u = Usage(**hit.get("usage", {}))
+            u.cached = True
+            return VLMResponse(hit["text"], hit.get("parsed"), u, self.model,
+                               attempts=0)
+        # The retry-with-parse-error loop lives in `ask`, and reproducing it
+        # here would be a second copy to keep in step. Route through `ask` with
+        # the payload already built instead.
+        return self._ask_payload(self._encode_video(system, user, parts),
+                                 system, user, key, schema, tag,
+                                 n_items=len(parts))
+
     def _encode(self, system: str, user: str, images: Sequence[ImageRef]) -> dict:
         if self.provider == "anthropic":
             content: list[dict[str, Any]] = []
@@ -274,7 +343,12 @@ class VLMClient:
             return VLMResponse(hit["text"], hit.get("parsed"), u, self.model,
                                attempts=0)
 
-        payload = self._encode(system, user, images)
+        return self._ask_payload(self._encode(system, user, images), system,
+                                 user, key, schema, tag, images=images)
+
+    def _ask_payload(self, payload: dict, system: str, user: str, key: str,
+                     schema: dict[str, Any] | None, tag: str,
+                     images: Sequence[ImageRef] = (), n_items: int = 0):
         last_err, text = "", ""
         for attempt in range(1, self.max_retries + 1):
             t0 = time.perf_counter()
@@ -282,7 +356,7 @@ class VLMClient:
                 data = self._post(payload)
                 text, usage = self._decode(data)
                 usage.latency_ms = (time.perf_counter() - t0) * 1000
-                usage.n_images = len(images)
+                usage.n_images = len(images) or n_items
             except (urllib.error.HTTPError, urllib.error.URLError, OSError,
                     KeyError, IndexError, json.JSONDecodeError) as e:
                 detail = ""
