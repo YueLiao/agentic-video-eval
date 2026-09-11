@@ -102,6 +102,14 @@ def main() -> int:
                     default=["http://127.0.0.1:8005/v1",
                              "http://127.0.0.1:8006/v1"])
     ap.add_argument("--model", default="gemma-4-31b-it")
+    ap.add_argument("--samples", type=int, default=1,
+                    help="samples per presentation order. The margin field the "
+                         "model returns is a constant -- 'clear' on 797 of 800 "
+                         "calls -- as are every other confidence it is asked "
+                         "for, so a usable one has to be derived structurally. "
+                         "Order consistency already separates 69.9% accuracy "
+                         "from 49.6%; sampling turns that binary into a count.")
+    ap.add_argument("--temperature", type=float, default=0.0)
     args = ap.parse_args()
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
     sys.stdout.reconfigure(line_buffering=True)
@@ -129,7 +137,8 @@ def main() -> int:
     print(f"{args.mode}: {len(rows)} 对 · {len(args.endpoints)} 个端点")
 
     vlms = [VLMClient(model=args.model, base_url=ep, max_tokens=700,
-                      timeout_s=600, cache_dir=out / "llm_cache")
+                      timeout_s=600, cache_dir=out / "llm_cache",
+                      temperature=args.temperature)
             for ep in args.endpoints]
     cache_p = out / "compare.json"
     done = json.loads(cache_p.read_text()) if cache_p.exists() else {}
@@ -150,24 +159,37 @@ def main() -> int:
         try:
             a, b = os.path.join(ROOT, r["path_A"]), os.path.join(ROOT, r["path_B"])
             la, lb = loci_for(r["path_A"]), loci_for(r["path_B"])
-            outs = {}
+            # Every vote is expressed on the original A/B, so the two orders
+            # can be pooled: a win for the second-presented clip in the swapped
+            # order is a win for the original A.
+            votes: list[float] = []
+            raw: list[str] = []
             for first in ("a", "b"):
-                resp = vlm.ask_multimodal(
-                    system=SYSTEM,
-                    user="逐条对照上面的判断依据,给出结论。",
-                    parts=build(args.mode, a, b, la, lb, first),
-                    schema={"type": "object"}, tag=f"vp/{args.mode}/{pid}/{first}")
-                if not resp.ok:
-                    return pid, {"error": resp.error or "call failed"}
-                outs[first] = str((resp.parsed or {}).get("winner", "tie")).upper()
-            w1, w2 = outs["a"], outs["b"]
+                sign = 1.0 if first == "a" else -1.0
+                for k in range(args.samples):
+                    resp = vlm.ask_multimodal(
+                        system=SYSTEM,
+                        user="逐条对照上面的判断依据,给出结论。",
+                        parts=build(args.mode, a, b, la, lb, first),
+                        schema={"type": "object"},
+                        tag=f"vp/{args.mode}/{pid}/{first}{k if k else ''}")
+                    if not resp.ok:
+                        return pid, {"error": resp.error or "call failed"}
+                    w = str((resp.parsed or {}).get("winner", "tie")).upper()
+                    raw.append(w)
+                    votes.append({"A": 1.0, "B": -1.0}.get(w, 0.0) * sign)
+            tally = sum(votes)
+            n_vote = sum(1 for v in votes if v != 0)
+            # The margin is the vote count, not anything the model reported.
+            winner = "a" if tally > 0 else ("b" if tally < 0 else "tie")
+            w1, w2 = raw[0], raw[args.samples]
             flip = {"A": "B", "B": "A"}
-            # In the second order the clips changed places, so a consistent
-            # judge must name the other letter.
-            consistent = (w1 == "TIE" or w2 == "TIE"
-                          or flip.get(w2, w2) == w1)
-            winner = w1.lower() if consistent else "tie"
-            return pid, {"winner": winner, "raw": [w1, w2],
+            consistent = (w1 == "TIE" or w2 == "TIE" or flip.get(w2, w2) == w1)
+            if args.samples == 1 and not consistent:
+                winner = "tie"          # 与既有单采样结果保持一致
+            return pid, {"winner": winner, "raw": raw,
+                         "tally": tally, "n_votes": len(votes),
+                         "n_decisive": n_vote,
                          "order_consistent": consistent, "label": r["MQ"],
                          "n_annotations": r["n_annotations"]}
         except Exception as e:  # noqa: BLE001

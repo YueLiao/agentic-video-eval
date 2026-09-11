@@ -37,8 +37,20 @@ from agenteval.tools.base import ToolResult
 _FONT = None
 
 
+_CJK_FONT = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
+
+
 def _label(img: np.ndarray, text: str, org=(6, 22), scale=0.6) -> np.ndarray:
+    """Burn a caption into an image.
+
+    Non-ASCII goes through PIL because cv2.putText renders every CJK codepoint
+    as '?' and says nothing about it: a panel labelled 「y=25% 横切 ↓时间」 came
+    back reading 'y=25% ?????  ?????????', which destroys the only key to what
+    the picture means. It surfaces only by looking at the output.
+    """
     import cv2
+    if not text.isascii():
+        return _label_cjk(img, text, org, max(14, int(scale * 30)))
     out = img.copy()
     cv2.rectangle(out, (org[0] - 4, org[1] - 18),
                   (org[0] + int(len(text) * 11 * scale) + 6, org[1] + 8),
@@ -46,6 +58,21 @@ def _label(img: np.ndarray, text: str, org=(6, 22), scale=0.6) -> np.ndarray:
     cv2.putText(out, text, org, cv2.FONT_HERSHEY_SIMPLEX, scale,
                 (255, 255, 255), 1, cv2.LINE_AA)
     return out
+
+
+def _label_cjk(img: np.ndarray, text: str, org, px: int) -> np.ndarray:
+    from PIL import Image, ImageDraw, ImageFont
+    im = Image.fromarray(img[:, :, ::-1])
+    d = ImageDraw.Draw(im)
+    try:
+        font = ImageFont.truetype(_CJK_FONT, px)
+    except OSError:
+        font = ImageFont.load_default()
+    x, y = org[0], max(0, org[1] - px)
+    box = d.textbbox((x, y), text, font=font)
+    d.rectangle([box[0] - 4, box[1] - 3, box[2] + 4, box[3] + 3], fill=(0, 0, 0))
+    d.text((x, y), text, font=font, fill=(255, 255, 255))
+    return np.asarray(im)[:, :, ::-1].copy()
 
 
 def _write(out_dir: Path, stem: str, img: np.ndarray, q: int = 94) -> Path:
