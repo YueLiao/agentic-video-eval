@@ -26,6 +26,7 @@ from agenteval.tools.renders import _label, _tile, _write
 
 def space_time_slice(video: VideoHandle, out_dir: Path, *, n_lines: int = 3,
                      width: int = 640, max_frames: int | None = None,
+                     mode: str = "diff", px_per_frame: int = 6,
                      tag: str = "xt") -> ToolResult:
     """Stack one row (and one column) of every frame into an image.
 
@@ -44,32 +45,90 @@ def space_time_slice(video: VideoHandle, out_dir: Path, *, n_lines: int = 3,
     h, w = frames[0].shape[:2]
     small = [cv2.resize(f, (width, int(h * width / w))) for f in frames]
     H = small[0].shape[0]
+    T = len(small)
+
+    # Raw scanlines were the first design and they fail on the case that matters:
+    # a static camera over a slow scene already produces vertical streaks
+    # everywhere, so an injected freeze is not distinguishable from ambient
+    # stillness -- measured, 0/6 detected. Differencing adjacent frames instead
+    # makes a freeze a *black* band (zero change) against a textured field,
+    # which reads the same whether or not the scene was busy to begin with.
+    if mode == "diff":
+        raw = [cv2.absdiff(a, b).astype(np.float32) for a, b in zip(small, small[1:])]
+        # Scale by this clip's own 90th percentile so typical motion lands in
+        # mid-grey. A fixed gain leaves a slow scene almost black, and then a
+        # freeze -- which is what the view exists to show -- is a black band on
+        # a black field.
+        ref = float(np.percentile(np.stack(raw), 90)) or 1.0
+        src = [np.clip(x * (190.0 / ref), 0, 255).astype(np.uint8) for x in raw]
+        kind_note = "相邻帧差分(按本片 90 分位归一化)"
+    else:
+        src = small
+        kind_note = "原始扫描线"
+    Ht = max(200, min(560, len(src) * px_per_frame))
+
+    def ruler(img, horizontal_time: bool):
+        """A time axis the reader can actually cite a number from."""
+        out = img.copy()
+        n = len(src)
+        for frac in (0.0, 0.25, 0.5, 0.75, 1.0):
+            if horizontal_time:
+                x = int(frac * (out.shape[1] - 1))
+                cv2.line(out, (x, out.shape[0] - 14), (x, out.shape[0] - 1),
+                         (0, 255, 255), 2)
+            else:
+                y = int(frac * (out.shape[0] - 1))
+                # Right edge: the panel title sits top-left, and a ruler there
+                # collides with the title of the panel stacked above it.
+                cv2.line(out, (out.shape[1] - 15, y), (out.shape[1] - 1, y),
+                         (0, 255, 255), 2)
+            lbl = f"{frac:.2f}"
+            pos = ((x - 16, out.shape[0] - 18) if horizontal_time
+                   else (out.shape[1] - 58, min(out.shape[0] - 4, y + 14)))
+            cv2.putText(out, lbl, pos, cv2.FONT_HERSHEY_SIMPLEX, 0.42,
+                        (0, 255, 255), 1, cv2.LINE_AA)
+        return out
+
     panels, meta = [], []
-    # Lines spread over the frame: a single line can miss the subject entirely.
     rows = [int(H * f) for f in np.linspace(0.25, 0.75, n_lines)]
     for r in rows:
-        img = np.stack([f[r] for f in small])          # (T, width, 3)
-        img = cv2.resize(img, (width, max(180, min(420, len(small) * 4))),
-                         interpolation=cv2.INTER_NEAREST)
-        panels.append(_label(img, f"y={r / H:.0%} 横切  ↓时间", org=(8, 22)))
+        img = np.stack([f[r] for f in src])            # (T-1, width, 3)
+        img = cv2.resize(img, (width, Ht), interpolation=cv2.INTER_NEAREST)
+        img = ruler(img, horizontal_time=False)
+        panels.append(_label(img, f"y={r / H:.0%} 横切 ↓时间(0→1)", org=(8, 24)))
         meta.append({"kind": "row", "pos": round(r / H, 3)})
     cols = [int(width * f) for f in np.linspace(0.35, 0.65, max(1, n_lines - 1))]
     for c in cols:
-        img = np.stack([f[:, c] for f in small])        # (T, H, 3)
-        img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)  # 时间轴放横向
-        img = cv2.resize(img, (max(180, min(420, len(small) * 4)), width // 2),
-                         interpolation=cv2.INTER_NEAREST)
-        panels.append(_label(img, f"x={c / width:.0%} 竖切  →时间", org=(8, 22)))
+        img = np.stack([f[:, c] for f in src])          # (T-1, H, 3)
+        # ROTATE_90_COUNTERCLOCKWISE already puts time left-to-right; the extra
+        # horizontal flip that used to be here reversed it, so every column
+        # panel reported its defects at 1-t and localisation was wrong by
+        # construction.
+        img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        img = cv2.resize(img, (Ht, width // 2), interpolation=cv2.INTER_NEAREST)
+        img = ruler(img, horizontal_time=True)
+        panels.append(_label(img, f"x={c / width:.0%} 竖切 →时间(0→1)", org=(8, 24)))
         meta.append({"kind": "col", "pos": round(c / width, 3)})
-    p = _write(out_dir / tag, f"{tag}_{video.path.stem}"[:110], _tile(panels, 1))
+    p = _write(out_dir / tag,
+               f"{tag}_{mode}_{video.path.stem}"[:110], _tile(panels, 1, gap=14))
     return ToolResult(
-        value={"n_frames": len(frames), "lines": meta, "fps": video.fps},
+        value={"n_frames": len(frames), "lines": meta, "fps": video.fps,
+               "mode": mode},
         images=[p], reliability=0.8, backend="space_time_slice",
-        hint=("这是**时空切片**:每一条取自视频的同一条扫描线,按时间堆叠,"
-              "所以一个方向是空间、另一个方向是**全帧率的时间**(没有抽样)。\n"
-              "读法:匀速运动=平直斜线;**竖直条带=画面停住(卡顿或静止镜头)**;"
-              "斜线突然错位=跳变或剪切;锯齿=抖动不平滑;整片倾斜=背景漂移。\n"
-              "**它只显示变化的时间结构,不说明变化得对不对**——是否该动要回到原帧判断。"),
+        hint=(f"这是**时空切片**({kind_note}):取视频同一条扫描线按时间堆叠,"
+              "一个方向是空间、另一个是**全帧率的时间**(没有抽样),"
+              "青色刻度标的是时间比例 0→1。\n"
+              + ("读法:**画面变化越大越亮、越小越暗**。\n"
+                 "**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是"
+                 "**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、"
+                 "占满整个高度。视频压缩会留下微弱噪点,所以它是"
+                 "**明显暗于相邻区域**,而不是纯黑;\n"
+                 "整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n"
+                 "**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),"
+                 "那不算卡顿——卡顿要求**周围在动而这一条不动**。"
+                 if mode == "diff" else
+                 "读法:匀速运动=平直斜线;竖直条带=画面停住;斜线错位=跳变;锯齿=抖动。")
+              + "\n**它只显示变化的时间结构,不说明变化得对不对。**"),
     )
 
 
