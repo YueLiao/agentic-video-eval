@@ -41,6 +41,7 @@ from agenteval.media.clip import VideoHandle                     # noqa: E402
 from agenteval.meta.videoalign import (acc_with_ties,            # noqa: E402
                                        acc_without_ties)
 from agenteval.tools.locus_view import worst_loci                # noqa: E402
+from agenteval.tools.splitscreen import split_screen             # noqa: E402
 
 ROOT = "/pub/evaluation_group/cy/rm_videos"
 R012 = ("/pub/evaluation_group/cy/mq_promptgen/pairing/review_results/"
@@ -66,6 +67,11 @@ SYSTEM = """\
 输出 JSON:{"winner":"A"|"B"|"tie","margin":"slight"|"clear","reason":"具体依据"}"""
 
 
+SPLIT_SYSTEM = SYSTEM.replace(
+    "输出 JSON:{\"winner\":\"A\"|\"B\"|\"tie\"",
+    "输出 JSON:{\"winner\":\"1\"|\"2\"|\"tie\"")
+
+
 def build(mode, a_path, b_path, la, lb, first="a"):
     """Parts for one order. Rebuilt per order so captions move with their clip."""
     lo, hi = (a_path, b_path) if first == "a" else (b_path, a_path)
@@ -84,7 +90,10 @@ def build(mode, a_path, b_path, la, lb, first="a"):
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mode", choices=["video", "loci", "both"], default="video")
+    ap.add_argument("--mode",
+                    choices=["video", "loci", "both", "split"], default="video")
+    ap.add_argument("--layout", default="vertical",
+                    choices=["vertical", "horizontal"])
     ap.add_argument("--splits", nargs="*", default=["train", "dev", "val_ac"])
     ap.add_argument("--ladder-only", action="store_true")
     ap.add_argument("--family", default=None)
@@ -150,6 +159,42 @@ def main() -> int:
                        Path(args.loci_dir), k=args.k)
         return r.images[:args.k * 2]
 
+    def split_one(i, r, a, b, vlm):
+        """Both clips in one video, so their order is spatial, not sequential.
+
+        The swap re-renders with the clips exchanged rather than relabelling:
+        the panel marks are burned into the frames, so a label that stayed put
+        while the content moved would contradict itself -- the failure that once
+        drove the order-flip rate to 83/100 on a labelled motion plot.
+        """
+        pid = r["pair_id"]
+        outs, raws = {}, []
+        for first in ("a", "b"):
+            va, vb = (a, b) if first == "a" else (b, a)
+            sv = split_screen(VideoHandle(va), VideoHandle(vb), out / "split",
+                              layout=args.layout, tag=f"sp_{args.layout[:1]}")
+            if sv.value.get("error"):
+                return pid, {"error": sv.value["error"]}
+            resp = vlm.ask_multimodal(
+                system=SPLIT_SYSTEM,
+                user=sv.hint + "\n\n逐条对照上面的判断依据,判断**哪一半**的运动质量更好。",
+                parts=[VideoRef(Path(sv.value["path"]))],
+                schema={"type": "object"}, tag=f"vp/split/{pid}/{first}")
+            if not resp.ok:
+                return pid, {"error": resp.error or "call failed"}
+            w = str((resp.parsed or {}).get("winner", "tie")).strip()
+            raws.append(w)
+            # "1" is whichever clip is on top in that rendering.
+            outs[first] = ("a" if first == "a" else "b") if w == "1" else \
+                          (("b" if first == "a" else "a") if w == "2" else "tie")
+        consistent = outs["a"] == outs["b"] or "tie" in outs.values()
+        winner = outs["a"] if consistent else "tie"
+        if outs["a"] == "tie":
+            winner = outs["b"]
+        return pid, {"winner": winner, "raw": raws, "resolved": list(outs.values()),
+                     "order_consistent": consistent, "label": r["MQ"],
+                     "n_annotations": r["n_annotations"]}
+
     def one(job):
         i, r = job
         pid = r["pair_id"]
@@ -158,6 +203,8 @@ def main() -> int:
         vlm = vlms[i % len(vlms)]
         try:
             a, b = os.path.join(ROOT, r["path_A"]), os.path.join(ROOT, r["path_B"])
+            if args.mode == "split":
+                return split_one(i, r, a, b, vlm)
             la, lb = loci_for(r["path_A"]), loci_for(r["path_B"])
             # Every vote is expressed on the original A/B, so the two orders
             # can be pooled: a win for the second-presented clip in the swapped
