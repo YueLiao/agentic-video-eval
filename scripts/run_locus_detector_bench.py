@@ -62,7 +62,7 @@ def hits(loci, d: Defect, T: int, k: int) -> bool:
 
 
 def _one(job):
-    path, seed, span_frac, z = job
+    path, seed, span_frac, z, raw, calib = job
     import cv2
     cv2.setNumThreads(1)
     try:
@@ -81,7 +81,8 @@ def _one(job):
     if not clean_p.exists():
         write(clean_p, frames, fps)
     try:
-        cm = compute_maps(str(clean_p), max_frames=96)
+        cm = compute_maps(str(clean_p), max_frames=96, raw=raw,
+                          calibration=calib)
         out["clean_loci"] = len(extract_loci(cm, z=z, max_loci=24))
     except Exception:  # noqa: BLE001
         return None
@@ -97,7 +98,8 @@ def _one(job):
         if not p.exists():
             write(p, apply(frames, [d]), fps)
         try:
-            m = compute_maps(str(p), max_frames=96)
+            m = compute_maps(str(p), max_frames=96, raw=raw,
+                             calibration=calib)
             loci = extract_loci(m, z=z, max_loci=24)
         except Exception:  # noqa: BLE001
             continue
@@ -113,6 +115,13 @@ def main() -> int:
     ap.add_argument("--workers", type=int, default=16)
     ap.add_argument("--span-frac", type=float, default=0.12)
     ap.add_argument("--z", type=float, default=2.5)
+    ap.add_argument("--calib", default=None,
+                    help="per-signal corpus statistics from calibrate_signals.py")
+    ap.add_argument("--raw", action="store_true",
+                    help="extract from raw maps with an absolute threshold. The "
+                         "default exceedance maps are a within-video rank, so a "
+                         "clean clip yields as many loci as a broken one and "
+                         "precision is capped before recall is counted.")
     args = ap.parse_args()
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
     sys.stdout.reconfigure(line_buffering=True)
@@ -122,10 +131,14 @@ def main() -> int:
     vids = vids[:args.n]
     print(f"{len(vids)} 条 × {len(LOCAL_TYPES)} 种局部缺陷 · z={args.z}")
 
-    cache = out / "raw.json"
+    cache = out / ("calib.json" if args.calib else
+                   ("raw_abs.json" if args.raw else "raw.json"))
     recs = json.loads(cache.read_text()) if cache.exists() else []
     if not recs:
-        jobs = [(v, i, args.span_frac, args.z) for i, v in enumerate(vids)]
+        calib = (json.loads(Path(args.calib).read_text())
+                 if args.calib else None)
+        jobs = [(v, i, args.span_frac, args.z, args.raw, calib)
+                for i, v in enumerate(vids)]
         with ProcessPoolExecutor(max_workers=args.workers) as ex:
             for i, r in enumerate(ex.map(_one, jobs), 1):
                 if r:

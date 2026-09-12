@@ -103,6 +103,28 @@ def _tile_reduce(x: np.ndarray, grid: tuple[int, int] = GRID) -> np.ndarray:
     return out
 
 
+def _calibrated(m: np.ndarray, stats: dict | None) -> np.ndarray:
+    """Normalise against a corpus of clean clips instead of against this clip.
+
+    The two existing options each fail one half of the job. Raw magnitudes are
+    absolute but not commensurable -- motion-compensated residual is heavy-tailed
+    and reaches z~50 where unexplained softness rarely passes 5, so one threshold
+    across signals is meaningless and every clip saturates the locus cap.
+    Exceedance makes them commensurable by ranking within the clip, and a rank
+    has no absolute meaning: a clean clip yields as many loci as a broken one,
+    which is why top-3 precision was capped at one third before recall entered.
+
+    Calibrating each signal on its own distribution over clean clips gives both:
+    the units are comparable across signals, and "nothing unusual here" is
+    representable, because a clip can simply fall below the corpus threshold.
+    """
+    if not stats:
+        return _exceedance(m)
+    med = float(stats.get("median", 0.0))
+    mad = float(stats.get("mad", 1.0)) or 1.0
+    return ((m - med) / mad).astype(np.float32)
+
+
 def _exceedance(m: np.ndarray) -> np.ndarray:
     """Map each cell to ``-log10(P(value >= x))`` within this video.
 
@@ -151,7 +173,9 @@ def _decode_work(video: str, max_frames: int | None = None) -> tuple[np.ndarray,
 
 def compute_maps(video: str, *, max_frames: int | None = None,
                  grid: tuple[int, int] = GRID,
-                 raw: bool = False) -> dict[str, np.ndarray]:
+                 raw: bool = False,
+                 calibration: dict[str, dict] | None = None
+                 ) -> dict[str, np.ndarray]:
     """Return {signal_name: (T-1, GY, GX) float32 map}.
 
     By default every map is exceedance-normalized, which is a *within-video*
@@ -267,7 +291,11 @@ def compute_maps(video: str, *, max_frames: int | None = None,
     ref = np.maximum(np.maximum(local, med), 1e-3)
     maps["freeze"] = np.clip(1.0 - change_energy / ref, 0.0, 1.0).astype(np.float32)
 
-    return maps if raw else {k: _exceedance(v) for k, v in maps.items()}
+    if raw:
+        return maps
+    if calibration:
+        return {k: _calibrated(v, calibration.get(k)) for k, v in maps.items()}
+    return {k: _exceedance(v) for k, v in maps.items()}
 
 
 def fuse(maps: dict[str, np.ndarray],
