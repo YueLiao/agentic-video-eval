@@ -51,6 +51,11 @@ def z(h, n):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--mode", choices=["inject", "bench"], default="inject")
+    ap.add_argument("--defect", default="frame_repeat",
+                    help="which defect to inject. The temporal branch was "
+                         "validated on frame_repeat; the spatial branch has "
+                         "never been validated at all, and its 25% firing rate "
+                         "on untouched clips could be detection or invention.")
     ap.add_argument("--n", type=int, default=24)
     ap.add_argument("--out", required=True)
     ap.add_argument("--workers", type=int, default=8)
@@ -92,8 +97,15 @@ def main() -> int:
             if T < 60:
                 continue
             t0 = rng.randint(int(T * 0.3), int(T * 0.6))
-            d = Defect(defect_id="d0", type="frame_repeat",
-                       t_span=(t0, t0 + 8), bbox=None, strength=1.0, params={})
+            spatial = args.defect not in ("frame_repeat", "frame_drop")
+            bbox = None
+            if spatial:
+                bw, bh = rng.uniform(0.22, 0.42), rng.uniform(0.22, 0.42)
+                bbox = (rng.uniform(0, 1 - bw), rng.uniform(0, 1 - bh), bw, bh)
+            span = 8 if not spatial else max(8, int(T * 0.18))
+            d = Defect(defect_id="d0", type=args.defect,
+                       t_span=(t0, min(T, t0 + span)), bbox=bbox,
+                       strength=1.0, params={"seed": i})
             tmp = out / "clips"; tmp.mkdir(parents=True, exist_ok=True)
             for cond, arr in (("inj", apply(frames, [d])), ("clean", frames)):
                 q = tmp / f"{Path(p).stem}_{cond}.mp4"
@@ -101,7 +113,9 @@ def main() -> int:
                     write(q, arr, fps)
                 key = f"{Path(p).stem}|{cond}"
                 jobs.append((len(jobs), key, str(q)))
-                truth[key] = [t0 / T, (t0 + 8) / T] if cond == "inj" else None
+                truth[key] = ({"t": [t0 / T, min(T, t0 + span) / T],
+                           "bbox": bbox, "spatial": spatial}
+                          if cond == "inj" else None)
         print(f"注入验证: {len(jobs)//2} 条 × (注入版 + 干净版)")
         todo = [j for j in jobs if j[1] not in done]
         if todo:
@@ -122,7 +136,7 @@ def main() -> int:
             tf = [f for f in v["findings"] if f["kind"] == "temporal"]
             if tf:
                 det += 1
-                ta, tb = truth.get(k) or (0, 0)
+                ta, tb = (truth.get(k) or {}).get("t", (0.0, 0.0))
                 loc += any(min(f["t_span"][1], tb) - max(f["t_span"][0], ta) > -0.08
                            for f in tf)
         fp = sum(1 for _k, v in cln
@@ -131,6 +145,27 @@ def main() -> int:
                    if any(f["kind"] == "spatial" for f in v["findings"]))
         sp_c = sum(1 for _k, v in cln
                    if any(f["kind"] == "spatial" for f in v["findings"]))
+        spatial_truth = any((truth.get(k) or {}).get("spatial") for k, _v in inj)
+        if spatial_truth:
+            sl = 0
+            for k, v in inj:
+                t = truth.get(k) or {}
+                ta, tb = t.get("t", (0, 0))
+                bx = t.get("bbox")
+                for f in v["findings"]:
+                    if f["kind"] != "spatial" or not f["bbox"]:
+                        continue
+                    if not (ta - 0.15 <= f["t_span"][0] <= tb + 0.15):
+                        continue
+                    x, y, w_, h_ = f["bbox"]
+                    gx, gy, gw, gh = bx
+                    ix = max(0.0, min(x + w_, gx + gw) - max(x, gx))
+                    iy = max(0.0, min(y + h_, gy + gh) - max(y, gy))
+                    if ix * iy > 0:
+                        sl += 1
+                        break
+            print(f"    其中定位到注入区域的 {sl}/{max(1,sp_i)} · "
+                  f"净检出(注入-干净) {(sp_i-sp_c)/max(1,len(inj)):+.0%}")
         print(f"\n  时间类(注入的就是卡顿)")
         print(f"    检出 {det}/{len(inj)} = {det/max(1,len(inj)):.0%} · "
               f"定位正确 {loc}/{max(1,det)} · "

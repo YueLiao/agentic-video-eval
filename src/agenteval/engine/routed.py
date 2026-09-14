@@ -197,33 +197,72 @@ WATCH_SYSTEM = """\
 如果整段都没有能具体指出的异常,就返回空列表——**空列表是合法且常见的答案**。
 """
 
+# The claim's type decides what evidence can settle it. The audit found every
+# spatial claim unconfirmable, and not because the model was wrong: a
+# penetration claim was answered with a side view that cannot show ordering, a
+# rigidity claim with two frames of an object that was turning, a trajectory
+# claim with a twelfth of a second at the apex of a toss. The evidence has to
+# match the claim.
+CLAIM_TYPES = {
+    "穿模": "一个物体穿过另一个物体,而不是绕过、碰撞或被遮挡",
+    "刚体形变": "本该保持形状的物体(车、桌、工具、角、骨架)在运动中弯曲或扭曲",
+    "物理轨迹": "运动不符合物理(该下落的悬停、该减速的加速、凭空改变方向)",
+    "结构崩坏": "肢体/手指/五官的数量或连接关系改变,物体融合或糊烂",
+    "凭空出现消失": "东西突然出现或消失,没有进出画面或被遮挡的过程",
+}
+
 WATCH_PROMPT = """请列出你在这段视频里**能具体指认**的画面异常,每条给:
 
-- `what`:是什么(例如:手指数量变了 / 物体穿过另一个物体 / 刚性物体在扭曲 /
-  东西凭空出现或消失 / 纹理糊成一团且不恢复)
+- `type`:必须是下面五类之一
+%s
+- `what`:具体是什么(哪个物体、发生了什么)
 - `t`:大约在整段的第几成(0~1)
 - `where`:画面的哪个区域,用 [x, y, w, h] 表示,**都用 0~1 的比例**,原点在左上
 
 最多列 3 条,按严重程度排。没有就返回 {"items": []}。
 
-输出 JSON:{"items":[{"what":"...","t":0~1,"where":[x,y,w,h]}]}"""
+输出 JSON:{"items":[{"type":"...","what":"...","t":0~1,"where":[x,y,w,h]}]}""" % (
+    "\n".join(f"  · `{k}` —— {v}" for k, v in CLAIM_TYPES.items()))
 
-VERIFY_SYSTEM = """\
-你在核实一条关于 **AI 生成视频**的具体指控,证据是该处放大后的连续帧。
+# Per type: how much time the evidence should span, and which tool gathers it.
+EVIDENCE_PLAN = {
+    "穿模": ("depth", 0.10),
+    "刚体形变": ("rigidity", 0.08),
+    "物理轨迹": ("trajectory", 1.00),
+    "结构崩坏": ("zoom", 0.05),
+    "凭空出现消失": ("span", 0.20),
+}
 
-判据只有一条:**同一个物体在相邻两格之间,拓扑变了没有?**
-该有几根手指还是几根,该连着的还连着,刚体还是那个形状。
+VERIFY_SYSTEM_BASE = """\
+你在核实一条关于 **AI 生成视频**的具体指控。
 
-下面这些都会让画面变得奇怪,但**都不是崩坏**:快速运动的模糊、被遮挡后重现、
-肢体或物体转向镜头造成的透视缩短、光影与反射变化、水花火焰树叶等本就细碎的纹理。
-
-看不清就选 `看不清`。**宁可说看不清,也不要把运动模糊说成崩坏。**
+看不清就选 `看不清`。**宁可说看不清,也不要把正常现象说成缺陷。**
+下面这些都会让画面变得奇怪,但都**不是**缺陷:快速运动的模糊、被遮挡后重现、
+物体转向镜头造成的透视缩短、光影与反射变化、水花火焰树叶等本就细碎的纹理。
 """
 
-VERIFY_PROMPT = """待核实的指控:%s
+VERIFY_RULE = {
+    "穿模": "判据:看深度图。两物重叠处若前后关系**明确反转**(本该在后的跑到前面,"
+            "或一个物体被另一个从中间切成前后两段)才算穿模;若近者始终在前、"
+            "只是轮廓重叠,那是**遮挡,不是缺陷**。深度图有噪声,边界模糊不算。",
+    "刚体形变": "判据:刚体上任意两点的距离应当恒定。已给出跟踪测量。"
+                "**注意排除透视缩短**——物体转向镜头时投影长度本来就会变,"
+                "那不是形变。只有当物体朝向基本不变而形状仍在变时才算。",
+    "物理轨迹": "判据:看整段的运动曲线和轨迹。自由落体应当**匀加速**(残影间距越来越大),"
+                "推力消失后应当减速。**注意**:抛物线顶点附近本来就几乎不动,"
+                "短时间内位置不变**不是**缺陷。",
+    "结构崩坏": "判据只有一条:同一个物体在相邻两格之间,**拓扑变了没有**?"
+                "该有几根手指还是几根,该连着的还连着。",
+    "凭空出现消失": "判据:看给出的较长时段。物体若从画面边缘进入、或从遮挡物后出现,"
+                    "那是**正常的**;只有在画面中央、无遮挡处突然出现或消失才算。",
+}
 
-1. `observed`:这几格之间,那个物体具体发生了什么变化?(先描述,不下结论)
-2. `verdict`:`确认`(拓扑确实变了) | `排除`(可由运动/遮挡/转向/光影解释) | `看不清`
+VERIFY_PROMPT = """待核实的指控(类型:%s):%s
+
+%s
+
+1. `observed`:证据里具体呈现了什么?(先描述,不下结论)
+2. `verdict`:`确认` | `排除` | `看不清`
 3. `severity`:仅当 verdict=确认 时给,`轻微`|`明显`|`严重`
 
 输出 JSON:{"observed":"...","verdict":"确认"|"排除"|"看不清",
@@ -246,12 +285,52 @@ def _norm_box(b, w: int, h: int):
     return (x, y, min(bw, 1 - x), min(bh, 1 - y))
 
 
+def gather_evidence(video: VideoHandle, kind: str, t: float, box, out_dir: Path):
+    """The evidence the claim type needs, not the evidence that is cheapest."""
+    from agenteval.signals.suspicion import SuspicionLocus
+    from agenteval.tools.depth import depth_pair
+    from agenteval.tools.locus_view import locus_strip
+    from agenteval.tools.renders import filmstrip, motion_trail
+
+    plan, frac = EVIDENCE_PLAN.get(kind, ("zoom", 0.05))
+    half = max(2, int(video.total * frac / 2))
+    centre = int(min(max(t, 0.0), 1.0) * (video.total - 1))
+    t0, t1 = max(0, centre - half), min(video.total, centre + half + 1)
+
+    if plan == "depth":
+        return depth_pair(video, out_dir, t_span=(t0, t1), bbox=box, n=3)
+    if plan == "trajectory":
+        return motion_trail(video, out_dir, n=8, tag="traj")
+    if plan == "span":
+        return filmstrip(video, out_dir, t0=t0, t1=t1, n=8, cols=4,
+                         side=340, tag="span")
+    if plan == "rigidity":
+        from agenteval.tools.physics import rigidity_check, track_points
+        tr = track_points(video, bbox=box, t_span=(t0, t1))
+        strip = locus_strip(video, SuspicionLocus(
+            locus_id="R", t_span=(t0, t1), bbox=box or (0, 0, 1, 1),
+            score=0.0, signals={}, n_cells=0), out_dir, n=4, tag="rig")
+        rc = rigidity_check(tr) if not tr.value.get("error") else None
+        if rc is not None and not rc.value.get("error"):
+            strip.value["rigidity"] = rc.value
+            strip.hint += ("\n\n跟踪测量:" + json.dumps(
+                {k: v for k, v in rc.value.items() if isinstance(v, (int, float))},
+                ensure_ascii=False) + "\n" + (rc.hint or ""))
+        return strip
+    return locus_strip(video, SuspicionLocus(
+        locus_id="Z", t_span=(t0, t1), bbox=box or (0, 0, 1, 1),
+        score=0.0, signals={}, n_cells=0), out_dir, n=4, tag="zoom")
+
+
 def spatial_pass(video: VideoHandle, vlm: VLMClient, out_dir: Path, *,
                  max_items: int = 3) -> tuple[list[Finding], list[str]]:
-    """No nomination step: the model watches the clip and says where to look."""
-    from agenteval.tools.locus_view import locus_strip
-    from agenteval.signals.suspicion import SuspicionLocus
+    """No nomination step: the model watches, says where, and names the type.
 
+    The type is what routes the evidence. Without it every claim got the same
+    four magnified frames, and an audit of seven claims on real clips confirmed
+    none of them -- not because the claims were wrong but because four frames
+    cannot settle a penetration, a rigidity or a trajectory question.
+    """
     resp = vlm.ask_multimodal(system=WATCH_SYSTEM, user=WATCH_PROMPT,
                               parts=[VideoRef(video.path)],
                               schema={"type": "object"},
@@ -269,35 +348,36 @@ def spatial_pass(video: VideoHandle, vlm: VLMClient, out_dir: Path, *,
         if not isinstance(it, dict):
             continue
         what = str(it.get("what") or "")[:80]
+        kind = str(it.get("type") or "").strip()
+        if kind not in CLAIM_TYPES:
+            kind = "结构崩坏"
         try:
             t = float(it.get("t"))
         except (TypeError, ValueError):
             unresolved.append(f"{what}(未给时刻)")
             continue
         box = _norm_box(it.get("where"), w, h) or (0.0, 0.0, 1.0, 1.0)
-        centre = int(min(max(t, 0.0), 1.0) * (video.total - 1))
-        loc = SuspicionLocus(
-            locus_id=f"W{k:02d}",
-            t_span=(max(0, centre - 3), min(video.total, centre + 4)),
-            bbox=box, score=0.0, signals={}, n_cells=0)
-        strip = locus_strip(video, loc, out_dir / "watch", n=4, tag="w")
-        if not strip.images:
-            unresolved.append(f"{what}(无法渲染)")
+        ev = gather_evidence(video, kind, t, box, out_dir / "ev")
+        if not ev.images:
+            unresolved.append(f"{what}(证据无法生成)")
             continue
-        v = vlm.ask(system=VERIFY_SYSTEM, user=VERIFY_PROMPT % what,
-                    images=[ImageRef(path=p, caption="放大处") for p in strip.images],
-                    schema={"type": "object"},
-                    tag=f"routed/verify/{video.path.stem}/{k}")
+        v = vlm.ask(
+            system=VERIFY_SYSTEM_BASE,
+            user=VERIFY_PROMPT % (kind, what, VERIFY_RULE.get(kind, ""))
+            + "\n\n" + (ev.hint or ""),
+            images=[ImageRef(path=p, caption="证据") for p in ev.images],
+            schema={"type": "object"},
+            tag=f"routed/verify/{kind}/{video.path.stem}/{k}")
         p_ = v.parsed or {}
         verdict = str(p_.get("verdict", "看不清"))
         if verdict == "确认":
             findings.append(Finding(
-                kind="spatial", aspect=what, t_span=(t, t),
+                kind="spatial", aspect=f"{kind}:{what}", t_span=(t, t),
                 bbox=box, severity=str(p_.get("severity") or "明显"),
-                found_by="vlm/watch", confirmed_by="vlm/verify",
+                found_by="vlm/watch", confirmed_by=f"vlm/verify[{kind}]",
                 note=str(p_.get("observed") or "")))
         elif verdict == "看不清":
-            unresolved.append(what)
+            unresolved.append(f"{kind}:{what}")
     return findings, unresolved
 
 
