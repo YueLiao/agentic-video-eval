@@ -1,0 +1,53 @@
+{
+ "threshold_fp": 0.05,
+ "thresholds": {
+  "mc_residual": 103.39649276733398,
+  "flow_anomaly": 3.9246584892272947,
+  "softness": 125.05818672180173,
+  "crawl": 22.470732402801513,
+  "luma_jump": 10.818849468231198,
+  "freeze": 0.9999236464500427
+ },
+ "summary": {
+  "local_blur": {
+   "best_signal": "mc_residual",
+   "detection": 0.062,
+   "localisation": 0.5
+  },
+  "frame_drop": {
+   "best_signal": "freeze",
+   "detection": 1.0,
+   "localisation": 0.969
+  },
+  "frame_repeat": {
+   "best_signal": "freeze",
+   "detection": 1.0,
+   "localisation": 1.0
+  },
+  "region_shuffle": {
+   "best_signal": "mc_residual",
+   "detection": 0.062,
+   "localisation": 1.0
+  },
+  "patch_jump": {
+   "best_signal": "mc_residual",
+   "detection": 0.156,
+   "localisation": 0.6
+  },
+  "luma_pulse": {
+   "best_signal": "crawl",
+   "detection": 0.938,
+   "localisation": 0.967
+  },
+  "affine_warp": {
+   "best_signal": "mc_residual",
+   "detection": 0.062,
+   "localisation": 0.5
+  },
+  "patch_swap": {
+   "best_signal": "mc_residual",
+   "detection": 0.062,
+   "localisation": 1.0
+  }
+ }
+}

@@ -1,0 +1,2002 @@
+[
+ {
+  "id": "D00",
+  "video": "mq_39afe53ff70d__hunyuan__s43",
+  "T": 96,
+  "ambient_motion": 16.63,
+  "bucket": 2,
+  "t_span": [
+   39,
+   47
+  ],
+  "truth_norm": [
+   0.406,
+   0.49
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_39afe53ff70d__hunyuan__s43_inj_885a10b2b1.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_39afe53ff70d__hunyuan__s43_inj_row25_2a1c7e95f1.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_39afe53ff70d__hunyuan__s43_inj_row50_5ce532a7ce.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_39afe53ff70d__hunyuan__s43_inj_row75_a6328d0020.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_39afe53ff70d__hunyuan__s43_inj_col35_2966f9d2d2.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_39afe53ff70d__hunyuan__s43_inj_col65_774954798e.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_80bf21c72d.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_39afe53ff70d__hunyuan__s43_clean_51a4b60147.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_03c5c5bbb0.jpg",
+  "contrast": 0.916,
+  "usable": true
+ },
+ {
+  "id": "D01",
+  "video": "mq_63cde231597d__wan5b__s43",
+  "T": 96,
+  "ambient_motion": 4.71,
+  "bucket": 1,
+  "t_span": [
+   61,
+   69
+  ],
+  "truth_norm": [
+   0.635,
+   0.719
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_63cde231597d__wan5b__s43_inj_90fcb58aee.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_63cde231597d__wan5b__s43_inj_row25_6ff1d5bda9.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_63cde231597d__wan5b__s43_inj_row50_1066644e60.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_63cde231597d__wan5b__s43_inj_row75_27fe80e30a.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_63cde231597d__wan5b__s43_inj_col35_ac43c5096f.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_63cde231597d__wan5b__s43_inj_col65_fde66e08e7.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_79988d589e.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_63cde231597d__wan5b__s43_clean_7b4a802067.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_e79361b097.jpg",
+  "contrast": 0.881,
+  "usable": true
+ },
+ {
+  "id": "D02",
+  "video": "mq_36d4a7a10408__wan5b__s42",
+  "T": 96,
+  "ambient_motion": 4.76,
+  "bucket": 1,
+  "t_span": [
+   58,
+   66
+  ],
+  "truth_norm": [
+   0.604,
+   0.688
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_36d4a7a10408__wan5b__s42_inj_f8987ece3f.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_36d4a7a10408__wan5b__s42_inj_row25_c2c4a742f3.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_36d4a7a10408__wan5b__s42_inj_row50_603183a127.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_36d4a7a10408__wan5b__s42_inj_row75_94fd7df721.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_36d4a7a10408__wan5b__s42_inj_col35_36892b1585.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_36d4a7a10408__wan5b__s42_inj_col65_10f274cbef.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_a542c00a5f.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_36d4a7a10408__wan5b__s42_clean_59de58b4b0.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_c6580766e7.jpg",
+  "contrast": 0.861,
+  "usable": true
+ },
+ {
+  "id": "D03",
+  "video": "mq_89702967ec0b__cogvideox__s42",
+  "T": 81,
+  "ambient_motion": 15.83,
+  "bucket": 2,
+  "t_span": [
+   28,
+   36
+  ],
+  "truth_norm": [
+   0.346,
+   0.444
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_89702967ec0b__cogvideox__s42_inj_dae31c740e.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.249,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_89702967ec0b__cogvideox__s42_inj_row24_b9bcfa7dc3.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.499,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_89702967ec0b__cogvideox__s42_inj_row49_f1b0302247.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.748,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_89702967ec0b__cogvideox__s42_inj_row74_e349c15b76.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_89702967ec0b__cogvideox__s42_inj_col35_0bb2c1b1ca.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_89702967ec0b__cogvideox__s42_inj_col65_4395189c99.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_80_5ff4161551.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-80 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_89702967ec0b__cogvideox__s42_clean_aab7cc7688.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_80_d2b04d59f8.jpg",
+  "contrast": 0.882,
+  "usable": true
+ },
+ {
+  "id": "D04",
+  "video": "mq_6b0a10c97926__cogvideox__s43",
+  "T": 81,
+  "ambient_motion": 6.25,
+  "bucket": 2,
+  "t_span": [
+   43,
+   51
+  ],
+  "truth_norm": [
+   0.531,
+   0.63
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_6b0a10c97926__cogvideox__s43_inj_fd6b036c75.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.249,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_6b0a10c97926__cogvideox__s43_inj_row24_2026b869e1.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.499,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_6b0a10c97926__cogvideox__s43_inj_row49_a75e7135b1.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.748,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_6b0a10c97926__cogvideox__s43_inj_row74_9a70e598ae.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_6b0a10c97926__cogvideox__s43_inj_col35_0ce6044fb8.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_6b0a10c97926__cogvideox__s43_inj_col65_ce5c71c637.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_80_6a5a444648.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-80 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_6b0a10c97926__cogvideox__s43_clean_d281a1946a.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_80_b0c8238098.jpg",
+  "contrast": 0.855,
+  "usable": true
+ },
+ {
+  "id": "D05",
+  "video": "mq_7db4d6a13330__pangu__s43",
+  "T": 96,
+  "ambient_motion": 2.15,
+  "bucket": 1,
+  "t_span": [
+   62,
+   70
+  ],
+  "truth_norm": [
+   0.646,
+   0.729
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_7db4d6a13330__pangu__s43_inj_5eca251ebe.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_7db4d6a13330__pangu__s43_inj_row25_b90153ac57.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_7db4d6a13330__pangu__s43_inj_row50_fe187659f5.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_7db4d6a13330__pangu__s43_inj_row75_9098c14017.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_7db4d6a13330__pangu__s43_inj_col35_5183bd47f5.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_7db4d6a13330__pangu__s43_inj_col65_83197bb9e1.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_646eb175db.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_7db4d6a13330__pangu__s43_clean_686b5722fc.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_b9f625650d.jpg",
+  "contrast": 0.84,
+  "usable": true
+ },
+ {
+  "id": "D06",
+  "video": "6340bf67f7__fake_motion_pan_L1",
+  "T": 96,
+  "ambient_motion": 9.69,
+  "bucket": 2,
+  "t_span": [
+   54,
+   62
+  ],
+  "truth_norm": [
+   0.562,
+   0.646
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_6340bf67f7__fake_motion_pan_L1_inj_86e893055f.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_6340bf67f7__fake_motion_pan_L1_inj_row25_d556d73be0.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_6340bf67f7__fake_motion_pan_L1_inj_row50_a10f8bb5b5.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_6340bf67f7__fake_motion_pan_L1_inj_row75_3fd066eb59.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_6340bf67f7__fake_motion_pan_L1_inj_col35_7b42ecddbd.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_6340bf67f7__fake_motion_pan_L1_inj_col65_675bdd9324.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_6848e8c81a.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_6340bf67f7__fake_motion_pan_L1_clean_fbfeab79fd.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_66243687b4.jpg",
+  "contrast": 0.802,
+  "usable": true
+ },
+ {
+  "id": "D07",
+  "video": "mq_342e76a8f209__pangu__s43",
+  "T": 96,
+  "ambient_motion": 3.62,
+  "bucket": 1,
+  "t_span": [
+   61,
+   69
+  ],
+  "truth_norm": [
+   0.635,
+   0.719
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_342e76a8f209__pangu__s43_inj_261bc1e5e4.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_342e76a8f209__pangu__s43_inj_row25_f0c332bbf1.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_342e76a8f209__pangu__s43_inj_row50_e5fc915aeb.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_342e76a8f209__pangu__s43_inj_row75_429b483220.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_342e76a8f209__pangu__s43_inj_col35_7a5dbdefbc.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_342e76a8f209__pangu__s43_inj_col65_bffd587a21.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_014e8967bd.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_342e76a8f209__pangu__s43_clean_f378a9cd1d.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_829fe98eb4.jpg",
+  "contrast": 0.847,
+  "usable": true
+ },
+ {
+  "id": "D08",
+  "video": "mq_be8acfe7d9b4__ltx__s42",
+  "T": 96,
+  "ambient_motion": 8.45,
+  "bucket": 2,
+  "t_span": [
+   28,
+   36
+  ],
+  "truth_norm": [
+   0.292,
+   0.375
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_be8acfe7d9b4__ltx__s42_inj_89a520088e.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_be8acfe7d9b4__ltx__s42_inj_row25_d63ef7b581.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_be8acfe7d9b4__ltx__s42_inj_row50_ffbbe6e61e.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_be8acfe7d9b4__ltx__s42_inj_row75_a89d14923e.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_be8acfe7d9b4__ltx__s42_inj_col35_489012ac1e.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_be8acfe7d9b4__ltx__s42_inj_col65_09e0754fe2.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_16a3aabf64.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_be8acfe7d9b4__ltx__s42_clean_b6cb0ebda6.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_784d1276dd.jpg",
+  "contrast": 0.831,
+  "usable": true
+ },
+ {
+  "id": "D09",
+  "video": "fc5eb65c4c__fake_motion_rotate_L1",
+  "T": 96,
+  "ambient_motion": 6.71,
+  "bucket": 2,
+  "t_span": [
+   62,
+   70
+  ],
+  "truth_norm": [
+   0.646,
+   0.729
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_fc5eb65c4c__fake_motion_rotate_L1_inj_9a77de6dd2.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_fc5eb65c4c__fake_motion_rotate_L1_inj_row25_8a6e604c57.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_fc5eb65c4c__fake_motion_rotate_L1_inj_row50_3d419ad560.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_fc5eb65c4c__fake_motion_rotate_L1_inj_row75_bf292febbc.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_fc5eb65c4c__fake_motion_rotate_L1_inj_col35_cbaea70baf.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_fc5eb65c4c__fake_motion_rotate_L1_inj_col65_d399ef4fd5.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_01a528b8dc.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_fc5eb65c4c__fake_motion_rotate_L1_clean_d6cbe6025a.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_bf46ffb978.jpg",
+  "contrast": 0.949,
+  "usable": true
+ },
+ {
+  "id": "D10",
+  "video": "709d42033f__fake_motion_zoombreath_L1",
+  "T": 81,
+  "ambient_motion": 9.76,
+  "bucket": 2,
+  "t_span": [
+   20,
+   28
+  ],
+  "truth_norm": [
+   0.247,
+   0.346
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_709d42033f__fake_motion_zoombreath_L1_inj_b39914d61c.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_709d42033f__fake_motion_zoombreath_L1_inj_row25_3c0f4fa0ca.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_709d42033f__fake_motion_zoombreath_L1_inj_row50_103be000ca.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_709d42033f__fake_motion_zoombreath_L1_inj_row75_7c63b68c23.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_709d42033f__fake_motion_zoombreath_L1_inj_col35_32dd6f688b.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_709d42033f__fake_motion_zoombreath_L1_inj_col65_9b981a27c5.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_80_507c74729a.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-80 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_709d42033f__fake_motion_zoombreath_L1_clean_364d7fdbdc.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_80_5ff11e301e.jpg",
+  "contrast": 0.809,
+  "usable": true
+ },
+ {
+  "id": "D11",
+  "video": "4abc79433d__deform_stretch_L1",
+  "T": 96,
+  "ambient_motion": 8.54,
+  "bucket": 2,
+  "t_span": [
+   54,
+   62
+  ],
+  "truth_norm": [
+   0.562,
+   0.646
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_4abc79433d__deform_stretch_L1_inj_758d669d7c.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_4abc79433d__deform_stretch_L1_inj_row25_70c72d6010.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_4abc79433d__deform_stretch_L1_inj_row50_d3911ed530.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_4abc79433d__deform_stretch_L1_inj_row75_157d9b7aa5.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_4abc79433d__deform_stretch_L1_inj_col35_d3d85c05ff.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_4abc79433d__deform_stretch_L1_inj_col65_d11cb0d462.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_3817b5c741.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_4abc79433d__deform_stretch_L1_clean_89329696e3.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_913516b9d9.jpg",
+  "contrast": 0.854,
+  "usable": true
+ },
+ {
+  "id": "D12",
+  "video": "1938_1",
+  "T": 96,
+  "ambient_motion": 10.19,
+  "bucket": 2,
+  "t_span": [
+   40,
+   48
+  ],
+  "truth_norm": [
+   0.417,
+   0.5
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_1938_1_inj_daded87d0f.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_1938_1_inj_row25_1a963a1d4d.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_1938_1_inj_row50_5562226a29.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_1938_1_inj_row75_7166006d8e.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_1938_1_inj_col35_b6d574b7b4.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_1938_1_inj_col65_398550fc52.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_dab260a95e.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_1938_1_clean_b51de58d94.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_0463be3617.jpg",
+  "contrast": 0.855,
+  "usable": true
+ },
+ {
+  "id": "D13",
+  "video": "mq_e62ecd95952d__wan5b__s42",
+  "T": 96,
+  "ambient_motion": 7.36,
+  "bucket": 2,
+  "t_span": [
+   59,
+   67
+  ],
+  "truth_norm": [
+   0.615,
+   0.698
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_e62ecd95952d__wan5b__s42_inj_68fc55c1a1.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_e62ecd95952d__wan5b__s42_inj_row25_69f3819f13.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_e62ecd95952d__wan5b__s42_inj_row50_506610443d.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_e62ecd95952d__wan5b__s42_inj_row75_56ad9a04f9.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_e62ecd95952d__wan5b__s42_inj_col35_4c215a035d.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_e62ecd95952d__wan5b__s42_inj_col65_5fcee68ac6.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_6c1c340279.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_e62ecd95952d__wan5b__s42_clean_32d4dbc926.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_7ab7b4728a.jpg",
+  "contrast": 0.852,
+  "usable": true
+ },
+ {
+  "id": "D14",
+  "video": "mq_4a21420d2260__cosmos_super__s43",
+  "T": 96,
+  "ambient_motion": 11.93,
+  "bucket": 2,
+  "t_span": [
+   38,
+   46
+  ],
+  "truth_norm": [
+   0.396,
+   0.479
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_4a21420d2260__cosmos_super__s43_inj_e8bede2a71.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_4a21420d2260__cosmos_super__s43_inj_row25_30f4b52feb.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_4a21420d2260__cosmos_super__s43_inj_row50_00ac8933dd.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_4a21420d2260__cosmos_super__s43_inj_row75_989cb42d3d.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_4a21420d2260__cosmos_super__s43_inj_col35_363a0b1df1.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_4a21420d2260__cosmos_super__s43_inj_col65_76c77052cc.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_8845c9c4ce.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_4a21420d2260__cosmos_super__s43_clean_421d56304a.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_7200a1cc67.jpg",
+  "contrast": 0.887,
+  "usable": true
+ },
+ {
+  "id": "D15",
+  "video": "mq_ed133d0a402b__cosmos_super__s43",
+  "T": 96,
+  "ambient_motion": 5.19,
+  "bucket": 1,
+  "t_span": [
+   36,
+   44
+  ],
+  "truth_norm": [
+   0.375,
+   0.458
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_ed133d0a402b__cosmos_super__s43_inj_bf85547010.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_ed133d0a402b__cosmos_super__s43_inj_row25_a917e1e801.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_ed133d0a402b__cosmos_super__s43_inj_row50_dbc2bc5f59.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_ed133d0a402b__cosmos_super__s43_inj_row75_10b45687f3.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_ed133d0a402b__cosmos_super__s43_inj_col35_7192f7b6de.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_ed133d0a402b__cosmos_super__s43_inj_col65_59f6250023.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_42a0ce8221.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_ed133d0a402b__cosmos_super__s43_clean_65e874d3f4.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_b2a329973c.jpg",
+  "contrast": 0.838,
+  "usable": true
+ },
+ {
+  "id": "D16",
+  "video": "mq_d2867efd061b__wan5b__s44",
+  "T": 96,
+  "ambient_motion": 10.69,
+  "bucket": 2,
+  "t_span": [
+   54,
+   62
+  ],
+  "truth_norm": [
+   0.562,
+   0.646
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_d2867efd061b__wan5b__s44_inj_c879514693.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_d2867efd061b__wan5b__s44_inj_row25_fcef52f1a3.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_d2867efd061b__wan5b__s44_inj_row50_f26e7d6dd9.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_d2867efd061b__wan5b__s44_inj_row75_b5c9aefbb5.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_d2867efd061b__wan5b__s44_inj_col35_8dc8a53cf8.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_d2867efd061b__wan5b__s44_inj_col65_5c266f2d0f.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_903104e656.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_d2867efd061b__wan5b__s44_clean_5937f9e5b8.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_a420c11b13.jpg",
+  "contrast": 0.797,
+  "usable": true
+ },
+ {
+  "id": "D17",
+  "video": "mq_2c6f37e56e64__hunyuan__s44",
+  "T": 96,
+  "ambient_motion": 11.53,
+  "bucket": 2,
+  "t_span": [
+   58,
+   66
+  ],
+  "truth_norm": [
+   0.604,
+   0.688
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_2c6f37e56e64__hunyuan__s44_inj_95706eb5f4.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_2c6f37e56e64__hunyuan__s44_inj_row25_ebd8bc3cdf.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_2c6f37e56e64__hunyuan__s44_inj_row50_adc9d3e90f.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_2c6f37e56e64__hunyuan__s44_inj_row75_f5f14669d2.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_2c6f37e56e64__hunyuan__s44_inj_col35_4c50662763.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_2c6f37e56e64__hunyuan__s44_inj_col65_6018759ad1.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_49232be8f9.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_2c6f37e56e64__hunyuan__s44_clean_8d595cb7ab.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_644e15a195.jpg",
+  "contrast": 0.871,
+  "usable": true
+ },
+ {
+  "id": "D18",
+  "video": "mq_497c73c648d7__wan14b__s43",
+  "T": 81,
+  "ambient_motion": 22.96,
+  "bucket": 2,
+  "t_span": [
+   50,
+   58
+  ],
+  "truth_norm": [
+   0.617,
+   0.716
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_497c73c648d7__wan14b__s43_inj_fa742f81af.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_497c73c648d7__wan14b__s43_inj_row25_f8a5160d19.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_497c73c648d7__wan14b__s43_inj_row50_3f0b8258a2.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_497c73c648d7__wan14b__s43_inj_row75_12d06a55c6.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_497c73c648d7__wan14b__s43_inj_col35_653e36347d.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_497c73c648d7__wan14b__s43_inj_col65_8d0d8df0ad.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_80_f75450cde9.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-80 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_497c73c648d7__wan14b__s43_clean_ed515e1cee.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_80_bfa53de680.jpg",
+  "contrast": 0.931,
+  "usable": true
+ },
+ {
+  "id": "D19",
+  "video": "mq_01613498570a__cosmos_nano__s44",
+  "T": 96,
+  "ambient_motion": 2.27,
+  "bucket": 1,
+  "t_span": [
+   49,
+   57
+  ],
+  "truth_norm": [
+   0.51,
+   0.594
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_01613498570a__cosmos_nano__s44_inj_cd33b0744b.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_01613498570a__cosmos_nano__s44_inj_row25_8f2c600faa.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_01613498570a__cosmos_nano__s44_inj_row50_0b51122563.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_01613498570a__cosmos_nano__s44_inj_row75_3448d7b39b.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_01613498570a__cosmos_nano__s44_inj_col35_1607ceec52.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_01613498570a__cosmos_nano__s44_inj_col65_76d8a7fb78.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_be8228de3b.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_01613498570a__cosmos_nano__s44_clean_ab50ea9cd4.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_42a038dcb5.jpg",
+  "contrast": 0.877,
+  "usable": true
+ },
+ {
+  "id": "D20",
+  "video": "mq_aa621be9aae6__cosmos_super__s44",
+  "T": 96,
+  "ambient_motion": 1.87,
+  "bucket": 0,
+  "t_span": [
+   33,
+   41
+  ],
+  "truth_norm": [
+   0.344,
+   0.427
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_aa621be9aae6__cosmos_super__s44_inj_4404d8e433.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_aa621be9aae6__cosmos_super__s44_inj_row25_3394873212.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_aa621be9aae6__cosmos_super__s44_inj_row50_e7a1cc4a89.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_aa621be9aae6__cosmos_super__s44_inj_row75_68eacc91af.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_aa621be9aae6__cosmos_super__s44_inj_col35_d2415c914f.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_aa621be9aae6__cosmos_super__s44_inj_col65_ef0e74757d.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_e2a422706d.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_aa621be9aae6__cosmos_super__s44_clean_03c0dfe679.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_8171fe5f2d.jpg",
+  "contrast": 0.643,
+  "usable": true
+ },
+ {
+  "id": "D21",
+  "video": "mq_caf501055b56__cogvideox__s43",
+  "T": 81,
+  "ambient_motion": 3.39,
+  "bucket": 1,
+  "t_span": [
+   34,
+   42
+  ],
+  "truth_norm": [
+   0.42,
+   0.519
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_caf501055b56__cogvideox__s43_inj_a1f6d1fcf2.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.249,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_caf501055b56__cogvideox__s43_inj_row24_53b2cf14fa.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.499,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_caf501055b56__cogvideox__s43_inj_row49_ef568a152a.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.748,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_caf501055b56__cogvideox__s43_inj_row74_fefbb56143.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_caf501055b56__cogvideox__s43_inj_col35_1d3c65c00b.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_caf501055b56__cogvideox__s43_inj_col65_5c0752583c.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_80_18dba55d48.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-80 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_caf501055b56__cogvideox__s43_clean_4135a37829.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_80_a0261b13f3.jpg",
+  "contrast": 0.692,
+  "usable": true
+ },
+ {
+  "id": "D22",
+  "video": "mq_ac209467981d__pangu__s42",
+  "T": 96,
+  "ambient_motion": 0.6,
+  "bucket": 0,
+  "t_span": [
+   33,
+   41
+  ],
+  "truth_norm": [
+   0.344,
+   0.427
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_ac209467981d__pangu__s42_inj_747b35e863.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_ac209467981d__pangu__s42_inj_row25_f013ae8503.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_ac209467981d__pangu__s42_inj_row50_e2b172ef7d.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_ac209467981d__pangu__s42_inj_row75_40c4e17977.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_ac209467981d__pangu__s42_inj_col35_bbb2042d94.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_ac209467981d__pangu__s42_inj_col65_2f19471c25.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_6e5e2b0d78.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_ac209467981d__pangu__s42_clean_fef265b864.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_3467ae9fb5.jpg",
+  "contrast": 0.56,
+  "usable": true
+ },
+ {
+  "id": "D23",
+  "video": "mq_5acd7c3202e1__wan14b__s43",
+  "T": 81,
+  "ambient_motion": 1.42,
+  "bucket": 0,
+  "t_span": [
+   44,
+   52
+  ],
+  "truth_norm": [
+   0.543,
+   0.642
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_5acd7c3202e1__wan14b__s43_inj_9a31ded096.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_5acd7c3202e1__wan14b__s43_inj_row25_3cc915abe0.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_5acd7c3202e1__wan14b__s43_inj_row50_88437df76c.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_5acd7c3202e1__wan14b__s43_inj_row75_4e87dfd18c.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_5acd7c3202e1__wan14b__s43_inj_col35_ae23682d47.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_5acd7c3202e1__wan14b__s43_inj_col65_e73685eb2a.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_80_d25b2bcae8.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-80 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_5acd7c3202e1__wan14b__s43_clean_0af794815b.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_80_247e580934.jpg",
+  "contrast": 0.73,
+  "usable": true
+ },
+ {
+  "id": "D24",
+  "video": "mq_71b4206011e7__cosmos_super__s42",
+  "T": 96,
+  "ambient_motion": 1.93,
+  "bucket": 0,
+  "t_span": [
+   24,
+   32
+  ],
+  "truth_norm": [
+   0.25,
+   0.333
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_71b4206011e7__cosmos_super__s42_inj_b0bf77cf25.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_71b4206011e7__cosmos_super__s42_inj_row25_6cfb841e7c.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_71b4206011e7__cosmos_super__s42_inj_row50_b56eec1c3c.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_71b4206011e7__cosmos_super__s42_inj_row75_7e9a5a513b.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_71b4206011e7__cosmos_super__s42_inj_col35_e1b72158c8.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_71b4206011e7__cosmos_super__s42_inj_col65_374f520a69.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_cced600c87.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_71b4206011e7__cosmos_super__s42_clean_a882950452.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_8968450acf.jpg",
+  "contrast": 0.838,
+  "usable": true
+ },
+ {
+  "id": "D25",
+  "video": "mq_97736cd0d8fc__wan5b__s44",
+  "T": 96,
+  "ambient_motion": 5.69,
+  "bucket": 1,
+  "t_span": [
+   28,
+   36
+  ],
+  "truth_norm": [
+   0.292,
+   0.375
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_97736cd0d8fc__wan5b__s44_inj_972c48e648.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_97736cd0d8fc__wan5b__s44_inj_row25_0f0afe78c4.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_97736cd0d8fc__wan5b__s44_inj_row50_5307506eac.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_97736cd0d8fc__wan5b__s44_inj_row75_1f497441c7.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_97736cd0d8fc__wan5b__s44_inj_col35_30753ad47f.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_97736cd0d8fc__wan5b__s44_inj_col65_e800705196.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_0277a126a4.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_97736cd0d8fc__wan5b__s44_clean_0ad4990eb5.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_c5ef87ca98.jpg",
+  "contrast": 0.768,
+  "usable": true
+ },
+ {
+  "id": "D26",
+  "video": "mq_60c1f131fe0c__wan14b__s44",
+  "T": 81,
+  "ambient_motion": 2.55,
+  "bucket": 1,
+  "t_span": [
+   30,
+   38
+  ],
+  "truth_norm": [
+   0.37,
+   0.469
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_60c1f131fe0c__wan14b__s44_inj_479a1afee9.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_60c1f131fe0c__wan14b__s44_inj_row25_94278da8a3.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_60c1f131fe0c__wan14b__s44_inj_row50_294a2b9d63.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_60c1f131fe0c__wan14b__s44_inj_row75_aa41b37215.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_60c1f131fe0c__wan14b__s44_inj_col35_3ab570f12a.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_60c1f131fe0c__wan14b__s44_inj_col65_666d461642.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_80_ef3db7178d.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-80 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_60c1f131fe0c__wan14b__s44_clean_e0b54f8432.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_80_23e570b946.jpg",
+  "contrast": 0.707,
+  "usable": true
+ },
+ {
+  "id": "D27",
+  "video": "mq_76ba25e015bf__pangu__s43",
+  "T": 96,
+  "ambient_motion": 3.51,
+  "bucket": 1,
+  "t_span": [
+   61,
+   69
+  ],
+  "truth_norm": [
+   0.635,
+   0.719
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_76ba25e015bf__pangu__s43_inj_0c22ef4a71.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_76ba25e015bf__pangu__s43_inj_row25_646efea1da.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_76ba25e015bf__pangu__s43_inj_row50_0d03b320c8.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_76ba25e015bf__pangu__s43_inj_row75_e405321743.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_76ba25e015bf__pangu__s43_inj_col35_02b0aeb2a7.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_76ba25e015bf__pangu__s43_inj_col65_d772cdd11f.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_236622eedf.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_76ba25e015bf__pangu__s43_clean_95a0504b77.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_b7687ec067.jpg",
+  "contrast": 0.835,
+  "usable": true
+ },
+ {
+  "id": "D28",
+  "video": "adbc43092a__stutter_microswap_L2",
+  "T": 96,
+  "ambient_motion": 3.21,
+  "bucket": 1,
+  "t_span": [
+   26,
+   34
+  ],
+  "truth_norm": [
+   0.271,
+   0.354
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_adbc43092a__stutter_microswap_L2_inj_f26c4e8244.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_adbc43092a__stutter_microswap_L2_inj_row25_ed3407adca.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_adbc43092a__stutter_microswap_L2_inj_row50_a6f9013a5b.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_adbc43092a__stutter_microswap_L2_inj_row75_f8e929642d.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_adbc43092a__stutter_microswap_L2_inj_col35_38a192b51c.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_adbc43092a__stutter_microswap_L2_inj_col65_c77f16e63a.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_5572abf4a3.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_adbc43092a__stutter_microswap_L2_clean_778f33a94e.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_3fac42f553.jpg",
+  "contrast": 0.886,
+  "usable": true
+ },
+ {
+  "id": "D29",
+  "video": "495fab7428__stutter_judder_L2",
+  "T": 81,
+  "ambient_motion": 2.82,
+  "bucket": 1,
+  "t_span": [
+   39,
+   47
+  ],
+  "truth_norm": [
+   0.481,
+   0.58
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_495fab7428__stutter_judder_L2_inj_bcd339fa44.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_495fab7428__stutter_judder_L2_inj_row25_4e4da2cb51.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_495fab7428__stutter_judder_L2_inj_row50_e06163489d.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_495fab7428__stutter_judder_L2_inj_row75_54c4317cba.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_495fab7428__stutter_judder_L2_inj_col35_9b2a3e93a2.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_495fab7428__stutter_judder_L2_inj_col65_806bedc49a.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_80_f71c9f0e4e.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-80 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_495fab7428__stutter_judder_L2_clean_f5af56cb5e.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_80_b479163308.jpg",
+  "contrast": 0.826,
+  "usable": true
+ },
+ {
+  "id": "D30",
+  "video": "mq_002adfdac838__cosmos_nano__s42",
+  "T": 96,
+  "ambient_motion": 3.39,
+  "bucket": 1,
+  "t_span": [
+   25,
+   33
+  ],
+  "truth_norm": [
+   0.26,
+   0.344
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_002adfdac838__cosmos_nano__s42_inj_2ab836c912.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_002adfdac838__cosmos_nano__s42_inj_row25_2808161450.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_002adfdac838__cosmos_nano__s42_inj_row50_885d7c557d.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_002adfdac838__cosmos_nano__s42_inj_row75_78d119ec2a.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_002adfdac838__cosmos_nano__s42_inj_col35_0c94738987.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_002adfdac838__cosmos_nano__s42_inj_col65_1211776827.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_02af59d103.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_002adfdac838__cosmos_nano__s42_clean_4f515c2bac.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_934a47e87c.jpg",
+  "contrast": 0.805,
+  "usable": true
+ },
+ {
+  "id": "D31",
+  "video": "bd250fece6__stutter_judder_L1",
+  "T": 96,
+  "ambient_motion": 5.02,
+  "bucket": 1,
+  "t_span": [
+   41,
+   49
+  ],
+  "truth_norm": [
+   0.427,
+   0.51
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_bd250fece6__stutter_judder_L1_inj_c2f96edf4c.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_bd250fece6__stutter_judder_L1_inj_row25_a63524ef77.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_bd250fece6__stutter_judder_L1_inj_row50_a6725fc154.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_bd250fece6__stutter_judder_L1_inj_row75_c59acd75a1.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_bd250fece6__stutter_judder_L1_inj_col35_3e56314e05.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_bd250fece6__stutter_judder_L1_inj_col65_092d8c05e2.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_abd33d5272.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_bd250fece6__stutter_judder_L1_clean_fc3f614d5b.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_80459ef16f.jpg",
+  "contrast": 0.836,
+  "usable": true
+ },
+ {
+  "id": "D32",
+  "video": "d891691827__fake_motion_kenburns_L2",
+  "T": 96,
+  "ambient_motion": 1.7,
+  "bucket": 0,
+  "t_span": [
+   54,
+   62
+  ],
+  "truth_norm": [
+   0.562,
+   0.646
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_d891691827__fake_motion_kenburns_L2_inj_3f3bec0054.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_d891691827__fake_motion_kenburns_L2_inj_row25_09d187901c.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_d891691827__fake_motion_kenburns_L2_inj_row50_5da50cb51b.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_d891691827__fake_motion_kenburns_L2_inj_row75_499182aaf2.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_d891691827__fake_motion_kenburns_L2_inj_col35_6b0a6ab346.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_d891691827__fake_motion_kenburns_L2_inj_col65_677949a780.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_9c6bb70cb0.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_d891691827__fake_motion_kenburns_L2_clean_81ff930919.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_d42ed5ebc3.jpg",
+  "contrast": 0.714,
+  "usable": true
+ },
+ {
+  "id": "D33",
+  "video": "mq_0d23913b9ec3__pangu__s42",
+  "T": 96,
+  "ambient_motion": 1.48,
+  "bucket": 0,
+  "t_span": [
+   62,
+   70
+  ],
+  "truth_norm": [
+   0.646,
+   0.729
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_0d23913b9ec3__pangu__s42_inj_28d8f1f73f.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_0d23913b9ec3__pangu__s42_inj_row25_d3a56bc011.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_0d23913b9ec3__pangu__s42_inj_row50_7e69a8e7ab.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_0d23913b9ec3__pangu__s42_inj_row75_54dcf1db30.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_0d23913b9ec3__pangu__s42_inj_col35_b47d16c5bb.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_0d23913b9ec3__pangu__s42_inj_col65_3e1dc7a751.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_5e81cccbf6.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_0d23913b9ec3__pangu__s42_clean_2796ba2e4c.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_cefab562f1.jpg",
+  "contrast": 0.884,
+  "usable": true
+ },
+ {
+  "id": "D34",
+  "video": "mq_7c3386742f99__wan5b__s43",
+  "T": 96,
+  "ambient_motion": 1.98,
+  "bucket": 0,
+  "t_span": [
+   48,
+   56
+  ],
+  "truth_norm": [
+   0.5,
+   0.583
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_7c3386742f99__wan5b__s43_inj_42a65fd601.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_7c3386742f99__wan5b__s43_inj_row25_68470a8039.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_7c3386742f99__wan5b__s43_inj_row50_eaf0243fe9.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_7c3386742f99__wan5b__s43_inj_row75_eb87b6e2eb.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_7c3386742f99__wan5b__s43_inj_col35_f0b040bea9.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_7c3386742f99__wan5b__s43_inj_col65_534a830de4.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_f46e8bc6b7.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_7c3386742f99__wan5b__s43_clean_d567461f88.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_3dbba6afc6.jpg",
+  "contrast": 0.861,
+  "usable": true
+ },
+ {
+  "id": "D35",
+  "video": "mq_60e372dcf9b5__wan14b__s42",
+  "T": 81,
+  "ambient_motion": 1.51,
+  "bucket": 0,
+  "t_span": [
+   47,
+   55
+  ],
+  "truth_norm": [
+   0.58,
+   0.679
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_60e372dcf9b5__wan14b__s42_inj_4f8d60f0be.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_60e372dcf9b5__wan14b__s42_inj_row25_0632777c0b.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_60e372dcf9b5__wan14b__s42_inj_row50_23b2541be6.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_60e372dcf9b5__wan14b__s42_inj_row75_0f8fd30e59.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_60e372dcf9b5__wan14b__s42_inj_col35_122477bfc6.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_60e372dcf9b5__wan14b__s42_inj_col65_28b3ec5165.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_80_587a1c4e63.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-80 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_60e372dcf9b5__wan14b__s42_clean_b8374019d0.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_80_34f728bba7.jpg",
+  "contrast": 0.697,
+  "usable": true
+ },
+ {
+  "id": "D36",
+  "video": "mq_5f1bb7bf0fd3__cosmos_super__s44",
+  "T": 96,
+  "ambient_motion": 1.99,
+  "bucket": 0,
+  "t_span": [
+   49,
+   57
+  ],
+  "truth_norm": [
+   0.51,
+   0.594
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_5f1bb7bf0fd3__cosmos_super__s44_inj_0580a345fb.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_5f1bb7bf0fd3__cosmos_super__s44_inj_row25_5b5bfc8351.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_5f1bb7bf0fd3__cosmos_super__s44_inj_row50_8feb4e5094.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_5f1bb7bf0fd3__cosmos_super__s44_inj_row75_6a500fc584.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_5f1bb7bf0fd3__cosmos_super__s44_inj_col35_cb16d52630.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_5f1bb7bf0fd3__cosmos_super__s44_inj_col65_9cf72c8e01.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_d09ffe713e.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_5f1bb7bf0fd3__cosmos_super__s44_clean_cc8098f74e.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_ca1f5aca64.jpg",
+  "contrast": 0.847,
+  "usable": true
+ },
+ {
+  "id": "D37",
+  "video": "mq_31720436f3e9__pangu__s42",
+  "T": 96,
+  "ambient_motion": 1.91,
+  "bucket": 0,
+  "t_span": [
+   60,
+   68
+  ],
+  "truth_norm": [
+   0.625,
+   0.708
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_31720436f3e9__pangu__s42_inj_9ad913bc47.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_31720436f3e9__pangu__s42_inj_row25_637df03eaf.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_31720436f3e9__pangu__s42_inj_row50_e9b12cef64.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_31720436f3e9__pangu__s42_inj_row75_ced3fcb083.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_31720436f3e9__pangu__s42_inj_col35_4cfa418054.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_31720436f3e9__pangu__s42_inj_col65_d912ecc651.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_bb1386e60f.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_31720436f3e9__pangu__s42_clean_4d7fef0474.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_23a882f764.jpg",
+  "contrast": 0.82,
+  "usable": true
+ },
+ {
+  "id": "D38",
+  "video": "mq_7c54f318b393__wan5b__s42",
+  "T": 96,
+  "ambient_motion": 1.96,
+  "bucket": 0,
+  "t_span": [
+   52,
+   60
+  ],
+  "truth_norm": [
+   0.542,
+   0.625
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_7c54f318b393__wan5b__s42_inj_b42da111ba.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_7c54f318b393__wan5b__s42_inj_row25_db6c7b07c7.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_7c54f318b393__wan5b__s42_inj_row50_b8625a4403.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_7c54f318b393__wan5b__s42_inj_row75_719fac9438.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_7c54f318b393__wan5b__s42_inj_col35_fb971b9429.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_7c54f318b393__wan5b__s42_inj_col65_6f7968cf46.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_6f1342384c.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_7c54f318b393__wan5b__s42_clean_43b1849306.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_d254b6cddf.jpg",
+  "contrast": 0.855,
+  "usable": true
+ },
+ {
+  "id": "D39",
+  "video": "mq_3f75c1b76722__cosmos_nano__s44",
+  "T": 96,
+  "ambient_motion": 1.27,
+  "bucket": 0,
+  "t_span": [
+   32,
+   40
+  ],
+  "truth_norm": [
+   0.333,
+   0.417
+  ],
+  "xt_inj": "/tmp/dbg40/views/xt_inj/xt_inj_diff_mq_3f75c1b76722__cosmos_nano__s44_inj_b4fa9e7d95.jpg",
+  "panels": [
+   {
+    "kind": "row",
+    "pos": 0.25,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_3f75c1b76722__cosmos_nano__s44_inj_row25_6b367156ad.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.5,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_3f75c1b76722__cosmos_nano__s44_inj_row50_3c67538cbd.jpg"
+   },
+   {
+    "kind": "row",
+    "pos": 0.75,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_3f75c1b76722__cosmos_nano__s44_inj_row75_9cec1a431b.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.35,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_3f75c1b76722__cosmos_nano__s44_inj_col35_f083bc934b.jpg"
+   },
+   {
+    "kind": "col",
+    "pos": 0.65,
+    "path": "/tmp/dbg40/views/xt_inj/panels/xt_inj_diff_mq_3f75c1b76722__cosmos_nano__s44_inj_col65_bcbf48cb36.jpg"
+   }
+  ],
+  "st_inj": "/tmp/dbg40/views/st_inj/st_inj_0_95_00f65942f9.jpg",
+  "hint_xt": "这是**时空切片**(相邻帧差分(按本片 90 分位归一化)):取视频同一条扫描线按时间堆叠,一个方向是空间、另一个是**全帧率的时间**(没有抽样),青色刻度标的是时间比例 0→1。\n读法:**画面变化越大越亮、越小越暗**。\n**卡顿/抽帧 = 一条明显比周围暗的带**:在标着「↓时间」的面板里它是**横向**的、占满整个宽度;在标着「→时间」的面板里它是**纵向**的、占满整个高度。视频压缩会留下微弱噪点,所以它是**明显暗于相邻区域**,而不是纯黑;\n整条突然变亮 = 跳变或剪切;明暗周期起伏 = 速度不稳;\n**注意**:整幅都很暗说明这段本来就几乎静止(静止镜头拍静物),那不算卡顿——卡顿要求**周围在动而这一条不动**。\n**它只显示变化的时间结构,不说明变化得对不对。**",
+  "hint_st": "第 0-95 帧按时间顺序排成一张图(左上→右下),每格左上角是帧号。请**逐格对比**:同一个物体的形状、纹理、边缘在相邻格之间应当连续变化。突然的重排、闪烁、跳变在这种并排布局下比逐张看容易得多。",
+  "xt_clean": "/tmp/dbg40/views/xt_clean/xt_clean_diff_mq_3f75c1b76722__cosmos_nano__s44_clean_b43ce42b84.jpg",
+  "st_clean": "/tmp/dbg40/views/st_clean/st_clean_0_95_aa5e2ccb4d.jpg",
+  "contrast": 0.651,
+  "usable": true
+ }
+]

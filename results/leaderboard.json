@@ -1,0 +1,65 @@
+{
+ "metric": "VideoAlign METRICS.md §1 acc_without_ties / §2 acc_with_ties",
+ "split": "R012 val_ac, 998 对, 587 非平局",
+ "reference": {
+  "cy 微调 RM": 65.5,
+  "官方 VideoReward": 46.3
+ },
+ "runs": [
+  {
+   "run": "wp_valac",
+   "描述": "video + 生成提示词条件",
+   "n_pairs": 998,
+   "n_nontie": 587,
+   "acc_without_ties": 67.1,
+   "acc_star": 42.1,
+   "epsilon_star": 1.0,
+   "ci95": 4.0,
+   "zero_margin_frac": 0.001,
+   "rows": "pairs_wp_valac.csv"
+  },
+  {
+   "run": "vp_valac",
+   "描述": "video 顺序呈现,温度 0,单次(基线)",
+   "n_pairs": 998,
+   "n_nontie": 587,
+   "acc_without_ties": 65.9,
+   "acc_star": 42.0,
+   "epsilon_star": 1.0,
+   "ci95": 4.0,
+   "zero_margin_frac": 0.002,
+   "rows": "pairs_vp_valac.csv"
+  },
+  {
+   "run": "vp_vote",
+   "描述": "video + 每序 3 次采样,共 6 票",
+   "n_pairs": 998,
+   "n_nontie": 587,
+   "acc_without_ties": 57.4,
+   "acc_star": 44.5,
+   "epsilon_star": 4.0,
+   "ci95": 4.0,
+   "zero_margin_frac": 0.204,
+   "rows": "pairs_vp_vote.csv"
+  },
+  {
+   "run": "sp_valac",
+   "描述": "上下分屏,两段同屏",
+   "n_pairs": 998,
+   "n_nontie": 587,
+   "acc_without_ties": 44.6,
+   "acc_star": 42.1,
+   "epsilon_star": 1.0,
+   "ci95": 4.0,
+   "zero_margin_frac": 0.292,
+   "rows": "pairs_sp_valac.csv"
+  }
+ ],
+ "extras": {
+  "detector_matrix": "detector_matrix.json",
+  "freeze_debug_set": "freeze_debug_set.json",
+  "routed_typed_reports": "routed_typed_reports.json",
+  "signal_calibration": "signals.json",
+  "capability_profile": "gemma-4-31b-it.json"
+ }
+}
