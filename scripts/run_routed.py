@@ -178,7 +178,16 @@ def main() -> int:
               f"干净版中位 {sorted(sc_c)[len(sc_c)//2]:.1f}")
         return 0
 
-    rows = [r for r in csv.DictReader(open(f"{R012}/val_ac.csv"))][:args.n]
+    # Strong preferences first: on an AA/BB pair one clip is decidedly worse,
+    # so if the chain has any recall at all it should find more in that one.
+    # This tests recall against human judgement without per-defect annotation,
+    # which injection cannot supply for spatial defects -- a rectangular paste
+    # of unrelated content is nothing like a real generation failure.
+    allrows = list(csv.DictReader(open(f"{R012}/val_ac.csv")))
+    strong = [r for r in allrows if r["MQ"] in ("AA", "BB")]
+    rest = [r for r in allrows if r["MQ"] not in ("AA", "BB", "same")]
+    rows = (strong + rest)[:args.n]
+    print(f"  其中强偏好 {sum(1 for r in rows if r['MQ'] in ('AA','BB'))} 对")
     vids = sorted({r[k] for r in rows for k in ("path_A", "path_B")})
     print(f"benchmark: {len(rows)} 对 · {len(vids)} 条视频")
     todo = [(i, v, os.path.join(ROOT, v)) for i, v in enumerate(vids)

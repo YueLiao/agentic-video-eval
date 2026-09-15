@@ -94,6 +94,13 @@ def main() -> int:
                     choices=["video", "loci", "both", "split"], default="video")
     ap.add_argument("--layout", default="vertical",
                     choices=["vertical", "horizontal"])
+    ap.add_argument("--with-prompt", action="store_true",
+                    help="give the judge the generation prompt. The comparison "
+                         "currently ignores it, and the fake-motion trap set "
+                         "says that costs: those clips move but not as the "
+                         "prompt describes, and the judge picked the flagged "
+                         "clip on 40.5% of its calls where people picked it on "
+                         "1.5%.")
     ap.add_argument("--splits", nargs="*", default=["train", "dev", "val_ac"])
     ap.add_argument("--ladder-only", action="store_true")
     ap.add_argument("--family", default=None)
@@ -201,6 +208,16 @@ def main() -> int:
         if pid in done:
             return pid, done[pid]
         vlm = vlms[i % len(vlms)]
+        # The prompt says what the motion was supposed to be. Without it the
+        # judge can only ask which clip looks cleaner, which is a different
+        # question from which clip did the thing.
+        prompt_note = ""
+        if args.with_prompt and r.get("prompt"):
+            prompt_note = ("这两段视频由**同一条提示词**生成:\n「"
+                           + str(r["prompt"])[:400] + "」\n\n"
+                           "判断时请把「**哪一段更好地实现了提示词描述的那个动作**」"
+                           "也计入——一段视频动得很多但动的不是提示词要求的事,"
+                           "并不比安静地把事做对的那段好。\n\n")
         try:
             a, b = os.path.join(ROOT, r["path_A"]), os.path.join(ROOT, r["path_B"])
             if args.mode == "split":
@@ -216,7 +233,7 @@ def main() -> int:
                 for k in range(args.samples):
                     resp = vlm.ask_multimodal(
                         system=SYSTEM,
-                        user="逐条对照上面的判断依据,给出结论。",
+                        user=(prompt_note + "逐条对照上面的判断依据,给出结论。"),
                         parts=build(args.mode, a, b, la, lb, first),
                         schema={"type": "object"},
                         tag=f"vp/{args.mode}/{pid}/{first}{k if k else ''}")

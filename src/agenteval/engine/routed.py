@@ -253,8 +253,10 @@ VERIFY_RULE = {
                 "短时间内位置不变**不是**缺陷。",
     "结构崩坏": "判据只有一条:同一个物体在相邻两格之间,**拓扑变了没有**?"
                 "该有几根手指还是几根,该连着的还连着。",
-    "凭空出现消失": "判据:看给出的较长时段。物体若从画面边缘进入、或从遮挡物后出现,"
-                    "那是**正常的**;只有在画面中央、无遮挡处突然出现或消失才算。",
+    "凭空出现消失": "**从画面边缘进入的情况已由测量排除,不必再考虑。**"
+                    "你只需判断这一处**有没有遮挡物**:水面、雾、阴影、烟尘、"
+                    "另一个物体的背后——从遮挡后面出来或进去都是**正常的**。"
+                    "只有在完全无遮挡处凭空出现或消失才算缺陷。",
 }
 
 VERIFY_PROMPT = """待核实的指控(类型:%s):%s
@@ -357,6 +359,25 @@ def spatial_pass(video: VideoHandle, vlm: VLMClient, out_dir: Path, *,
             unresolved.append(f"{what}(未给时刻)")
             continue
         box = _norm_box(it.get("where"), w, h) or (0.0, 0.0, 1.0, 1.0)
+
+        # Half of an "appeared from nothing" claim is geometry, and the model
+        # gets that half wrong: audited on real clips it asserted "not entering
+        # from the frame edge" for a glass falling in from the top, with the
+        # rule that would have excluded it written in its own prompt. Where new
+        # content first shows up and how far that is from the border is
+        # arithmetic, so it is settled before the model is asked. What stays
+        # with the model is whether something was covering the spot -- water,
+        # fog, another object -- which no measurement can answer.
+        measured = ""
+        if kind == "凭空出现消失":
+            from agenteval.tools.appearance import entry_check
+            ec = entry_check(video, t_norm=t, bbox=box)
+            if ec.value.get("verdict") == "entered_from_edge":
+                unresolved.append(f"{kind}:{what}(几何判定为正常入场,已排除)")
+                continue
+            if not ec.value.get("error"):
+                measured = "\n\n" + (ec.hint or "")
+
         ev = gather_evidence(video, kind, t, box, out_dir / "ev")
         if not ev.images:
             unresolved.append(f"{what}(证据无法生成)")
@@ -364,7 +385,7 @@ def spatial_pass(video: VideoHandle, vlm: VLMClient, out_dir: Path, *,
         v = vlm.ask(
             system=VERIFY_SYSTEM_BASE,
             user=VERIFY_PROMPT % (kind, what, VERIFY_RULE.get(kind, ""))
-            + "\n\n" + (ev.hint or ""),
+            + "\n\n" + (ev.hint or "") + measured,
             images=[ImageRef(path=p, caption="证据") for p in ev.images],
             schema={"type": "object"},
             tag=f"routed/verify/{kind}/{video.path.stem}/{k}")
